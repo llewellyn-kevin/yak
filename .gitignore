@@ -1,0 +1,6 @@
+.sw*
+.notes.md
+bin/*
+!bin/README.md
+pkg/*
+!pkg/README.md
