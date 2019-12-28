@@ -1,5 +1,5 @@
 .sw*
-.notes.md
+.notes
 bin/*
 !bin/README.md
 pkg/*
