@@ -18,19 +18,25 @@ func main() {
   }
 
   // Generate a string array to pass to the lexer, add an EOF
-  input := getstrings(file)
+  input := getfields(file)
   input = append(input, "EOF")
+
+  tree := Newtree(*Newtoken("test"))
+  curnode := tree.Root
 
   // Pass the string array into the lexer to grab all the needed tokens
   for lexer := Newlexer(input); lexer.Gettoken().Value != "EOF"; lexer.Next() {
-    fmt.Println(lexer.Gettoken())
+    curnode.Addnode(*lexer.Gettoken())
+    curnode = curnode.Nodes[0]
   }
+
+  fmt.Println(tree)
 }
 
 /**
  * Takes a byte array and converts it to a string array ignoring whitespace
  */
-func getstrings(bytearr []byte) []string {
+func getfields(bytearr []byte) []string {
   const SPACE byte = 32
   const TAB byte = 9
   const BREAK byte = 10
