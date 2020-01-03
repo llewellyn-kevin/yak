@@ -30,14 +30,35 @@ func (t *Treenode) Clearnodes() {
   t.Nodes = nil
 }
 
+const TAB string = "    "
+
 func (t Treenode) String() (res string) {
   res += t.Value.String()
   if len(t.Nodes) > 0 {
     res += " ("
     for _, value := range t.Nodes {
-      res += " " + value.String()
+      res += "\n"
+      res += TAB + value.nestedstring(1)
     }
-    res += " ) "
+    res += "\n"
+    res += ")"
   }
   return
+}
+
+func (t Treenode) nestedstring(level int) (res string) {
+  res += t.Value.String()
+  if len(t.Nodes) > 0 {
+    res += " ("
+    for _, value := range t.Nodes {
+      res += "\n"
+      for i := 0; i < level; i++ { res += TAB }
+      res += TAB + value.nestedstring(level+1)
+    }
+    res += "\n"
+    for i := 0; i < level; i++ { res += TAB }
+    res += ")"
+  }
+  return
+
 }
