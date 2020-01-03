@@ -9,13 +9,16 @@ type Token struct {
 }
 
 func tokenlookup(value string) string {
+  main := regexp.MustCompile(`^<MAIN>$`)
   integer := regexp.MustCompile(`^\d+$`)
   float := regexp.MustCompile(`^\d+\.\d+$`)
   operator := regexp.MustCompile(`^\+$|^\-$|^\*$|^/$`)
   identifier := regexp.MustCompile(`^[_\$a-zA-Z][_\a-zA-Z0-9]*$`)
-  eof := regexp.MustCompile(`^EOF$`)
+  eof := regexp.MustCompile(`^<EOF>$`)
 
   switch {
+  case main.FindString(value) != "":
+    return "MAIN"
   case integer.FindString(value) != "":
     return "INTEGER"
   case float.FindString(value) != "":

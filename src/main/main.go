@@ -7,6 +7,10 @@ import (
   "io/ioutil"
 )
 
+const (
+  BUFFER_END = "<EOF>"
+)
+
 func main() {
   // Grab filename to compile from command line args
   fname := os.Args[1]
@@ -19,12 +23,12 @@ func main() {
 
   // Generate a string array to pass to the lexer, add an EOF
   input := getfields(file)
-  input = append(input, "EOF")
+  input = append(input, BUFFER_END)
 
   // Create a syntax tree and lexer, run through parser
-  tree := Newtree(*Newtoken("MAIN"))
+  tree := Newtree(*Newtoken("<MAIN>"))
   lexer := Newlexer(input)
-  Parse(lexer, tree.Root, "EOF")
+  Parse(lexer, tree.Root, BUFFER_END)
 
   fmt.Println(tree)
 }
