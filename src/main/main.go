@@ -21,23 +21,12 @@ func main() {
   input := getfields(file)
   input = append(input, "EOF")
 
-  tree := Newtree(*Newtoken("test"))
-  curnode := tree.Root
+  // Create a syntax tree and lexer, run through parser
+  tree := Newtree(*Newtoken("MAIN"))
+  lexer := Newlexer(input)
+  Parse(lexer, tree.Root, "EOF")
 
-  // Pass the string array into the lexer to grab all the needed tokens
-  for lexer := Newlexer(input); lexer.Gettoken().Value != "EOF"; lexer.Next() {
-    curnode.Addnode(*lexer.Gettoken())
-  }
-
-  //fmt.Println(tree)
-
-  stack := new(Stack)
-  stack.Name = "Main"
-  stack.Put(1)
-  stack.Put(11)
-  fmt.Println(stack.Pop())
-  stack.Put(5)
-  fmt.Println(stack.String())
+  fmt.Println(tree)
 }
 
 /**
