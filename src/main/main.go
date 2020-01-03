@@ -27,10 +27,17 @@ func main() {
   // Pass the string array into the lexer to grab all the needed tokens
   for lexer := Newlexer(input); lexer.Gettoken().Value != "EOF"; lexer.Next() {
     curnode.Addnode(*lexer.Gettoken())
-    curnode = curnode.Nodes[0]
   }
 
-  fmt.Println(tree)
+  //fmt.Println(tree)
+
+  stack := new(Stack)
+  stack.Name = "Main"
+  stack.Put(1)
+  stack.Put(11)
+  fmt.Println(stack.Pop())
+  stack.Put(5)
+  fmt.Println(stack.String())
 }
 
 /**
