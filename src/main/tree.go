@@ -32,6 +32,10 @@ func (t *Treenode) Clearnodes() {
   t.Nodes = nil
 }
 
+func (t Treenode) Lastnode() *Treenode {
+  return t.Nodes[len(t.Nodes) - 1]
+}
+
 const TAB string = "    "
 
 func (t Treenode) String() (res string) {
@@ -41,7 +45,7 @@ func (t Treenode) String() (res string) {
   if len(t.Nodes) > 0 {
     res += " ("
     for _, value := range t.Nodes {
-      // res += "\n"
+      res += "\n"
       res += value.nestedstring(1)
     }
     res += "\n"

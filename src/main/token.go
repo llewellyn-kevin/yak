@@ -10,15 +10,25 @@ type Token struct {
 
 func tokenlookup(value string) string {
   main := regexp.MustCompile(`^<MAIN>$`)
+  blockopen := regexp.MustCompile(`^\{$`)
+  blockclose := regexp.MustCompile(`^\}$`)
   integer := regexp.MustCompile(`^\d+$`)
   float := regexp.MustCompile(`^\d+\.\d+$`)
   operator := regexp.MustCompile(`^\+$|^\-$|^\*$|^/$`)
   identifier := regexp.MustCompile(`^[_\$a-zA-Z][_\a-zA-Z0-9]*$`)
+  funcheader := regexp.MustCompile(`^\d+#[_\$a-zA-Z][_\a-zA-Z0-9]*$`)
+
   eof := regexp.MustCompile(`^<EOF>$`)
 
   switch {
   case main.FindString(value) != "":
     return "MAIN"
+  case blockopen.FindString(value) != "":
+    return "BLOCK_OPEN"
+  case blockclose.FindString(value) != "":
+    return "BLOCK_CLOSE"
+  case funcheader.FindString(value) != "":
+    return "FUNC_HEADER"
   case integer.FindString(value) != "":
     return "INTEGER"
   case float.FindString(value) != "":
@@ -28,7 +38,7 @@ func tokenlookup(value string) string {
   case identifier.FindString(value) != "":
     return "IDENTIFIER"
   case eof.FindString(value) != "":
-    return "EOF"
+    return "<EOF>"
   default:
     return "UNKNOWN"
   }
