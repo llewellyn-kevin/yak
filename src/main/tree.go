@@ -1,15 +1,17 @@
 package main
 
+import "fmt"
+
 type Syntaxtree struct {
   Root *Treenode
 }
 
 type Treenode struct {
-  Value Token
+  Value map[string]interface{}
   Nodes []*Treenode
 }
 
-func Newtree(rootval Token) *Syntaxtree {
+func Newtree(rootval map[string]interface{}) *Syntaxtree {
   tree := new(Syntaxtree)
   tree.Root = new(Treenode)
   tree.Root.Value = rootval
@@ -20,7 +22,7 @@ func (s Syntaxtree) String() string {
   return s.Root.String()
 }
 
-func (t *Treenode) Addnode(newval Token) {
+func (t *Treenode) Addnode(newval map[string]interface{}) {
   var newnode *Treenode = new(Treenode)
   newnode.Value = newval
   t.Nodes = append(t.Nodes, newnode)
@@ -33,12 +35,14 @@ func (t *Treenode) Clearnodes() {
 const TAB string = "    "
 
 func (t Treenode) String() (res string) {
-  res += t.Value.String()
+  for k, v := range t.Value {
+    res += fmt.Sprintf("%s: %v", k, v)
+  }
   if len(t.Nodes) > 0 {
     res += " ("
     for _, value := range t.Nodes {
-      res += "\n"
-      res += TAB + value.nestedstring(1)
+      // res += "\n"
+      res += value.nestedstring(1)
     }
     res += "\n"
     res += ")"
@@ -47,7 +51,11 @@ func (t Treenode) String() (res string) {
 }
 
 func (t Treenode) nestedstring(level int) (res string) {
-  res += t.Value.String()
+  for k, v := range t.Value {
+    res += "\n"
+    for i := 0; i < level; i++ { res += "   " }
+    res += fmt.Sprintf("%s: %v", k, v)
+  }
   if len(t.Nodes) > 0 {
     res += " ("
     for _, value := range t.Nodes {
