@@ -28,9 +28,13 @@ func main() {
   // Create a syntax tree and lexer, run through parser
   tree := Newtree(map[string]interface{}{"MAIN": "LOOP"})
   lexer := Newlexer(input)
-  Parse(lexer, tree.Root, BUFFER_END)
+  mainstack := new(Stack)
+  mainstack.Name = "Main"
 
-  fmt.Println(tree)
+  Parse(lexer, tree.Root, BUFFER_END)
+  Interpret(tree.Root, mainstack)
+
+  fmt.Println(mainstack)
 }
 
 /**

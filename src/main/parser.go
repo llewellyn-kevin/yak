@@ -1,6 +1,9 @@
 package main
 
-import "strings"
+import (
+  "strings"
+  "strconv"
+)
 
 func Parse(lexer *Lexer, root *Treenode, endsymbol string) {
   var curtoken Token
@@ -11,9 +14,15 @@ func Parse(lexer *Lexer, root *Treenode, endsymbol string) {
 
     switch(curtoken.Symbol) {
       case "INTEGER":
-        toadd["PUSH_INT"] = curtoken.Value
+        floatrep, err := strconv.ParseFloat(curtoken.Value, 64)
+        if err == nil {
+          toadd["PUSH_INT"] = floatrep
+        }
       case "FLOAT":
-        toadd["PUSH_FLOAT"] = curtoken.Value
+        floatrep, err := strconv.ParseFloat(curtoken.Value, 64)
+        if err == nil {
+          toadd["PUSH_FLOAT"] = floatrep
+        }
       case "OPERATOR":
         toadd["OPERATION"] = curtoken.Value
       case "FUNC_HEADER":
@@ -41,16 +50,3 @@ func Parse(lexer *Lexer, root *Treenode, endsymbol string) {
   }
 }
 
-/*func nestedparse(lexer *Lexer, root *Treenode, endsymbol string) {
-  car curtoken Token
-  toadd := make(map[string]interface{})
-  for ; lexer.Gettoken().Value != endsymbol; lexer.Next() {
-    curtoken = *lexer.Gettoken()
-    toadd = make(map[string]interface{})
-
-    switch(curtoken.Symbol) {
-      case
-    }
-    root.Addnode(toadd)
-  }
-}*/
