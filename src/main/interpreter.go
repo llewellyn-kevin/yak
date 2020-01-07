@@ -5,6 +5,8 @@ import (
   "fmt"
 )
 
+var funcnodes []*Treenode
+
 func Interpret(root *Treenode, stack *Stack) *Stack {
   for _, node := range root.Nodes {
     for k, v := range node.Value {
@@ -44,6 +46,25 @@ func Interpret(root *Treenode, stack *Stack) *Stack {
                 stack.Put(b / a)
               }
 
+          }
+        case "FUNC_HEADER":
+          funcnodes = append(funcnodes, node)
+        case "FUNC_IDENTIFIER", "NUM_ARGS":
+        case "FUNC_CALL":
+          for _, f := range funcnodes {
+            if f.Value["FUNC_IDENTIFIER"] == v {
+              args, err := getFloat(f.Value["NUM_ARGS"])
+              if err == nil {
+                funcstack := new(Stack)
+                funcstack.Name = "Function Call"
+                var i float64
+                for i = 0; i < args; i++ {
+                  funcstack.Put(stack.Pop())
+                  funcstack = Interpret(f, funcstack)
+                  stack.Put(funcstack.Pop())
+                }
+              }
+            }
           }
       }
     }

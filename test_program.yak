@@ -1,1 +1,14 @@
-4.2 20.8 + 2 /
+1#double {
+  2 *
+}
+
+1#double_next_int {
+  1#inc {
+    1 +
+  }
+
+  inc double
+}
+
+5 double_next_int
+

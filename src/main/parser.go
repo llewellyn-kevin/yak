@@ -28,7 +28,7 @@ func Parse(lexer *Lexer, root *Treenode, endsymbol string) {
       case "FUNC_HEADER":
         toadd["FUNC_HEADER"] = curtoken.Value
         fields := strings.SplitN(curtoken.Value, "#", 2)
-        toadd["NUM_ARGS"] = fields[0]
+        toadd["NUM_ARGS"], _ = strconv.Atoi(fields[0])
         toadd["FUNC_IDENTIFIER"] = fields[1]
 
         lexer.Next()
@@ -42,7 +42,7 @@ func Parse(lexer *Lexer, root *Treenode, endsymbol string) {
           Parse(lexer, root.Lastnode(), "BLOCK_CLOSE")
         }
       case "IDENTIFIER":
-        toadd["ILLEGAL_TOKEN"] = curtoken.Value
+        toadd["FUNC_CALL"] = curtoken.Value
       default:
         toadd["UNRECOGNIZED_TOKEN"] = curtoken.Value
     }
