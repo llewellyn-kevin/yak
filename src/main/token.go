@@ -10,11 +10,16 @@ type Token struct {
 
 func tokenlookup(value string) string {
   main := regexp.MustCompile(`^<MAIN>$`)
+
+  checkif := regexp.MustCompile(`^\?$`)
+  checknot := regexp.MustCompile(`^!$`)
+
   blockopen := regexp.MustCompile(`^\{$`)
   blockclose := regexp.MustCompile(`^\}$`)
+
   integer := regexp.MustCompile(`^\d+$`)
   float := regexp.MustCompile(`^\d+\.\d+$`)
-  operator := regexp.MustCompile(`^\+$|^\-$|^\*$|^/$`)
+  operator := regexp.MustCompile(`^\+$|^\-$|^\*$|^/$|^%$`)
   identifier := regexp.MustCompile(`^[_\$a-zA-Z][_\a-zA-Z0-9]*$`)
   funcheader := regexp.MustCompile(`^\d+#[_\$a-zA-Z][_\a-zA-Z0-9]*$`)
 
@@ -23,6 +28,10 @@ func tokenlookup(value string) string {
   switch {
   case main.FindString(value) != "":
     return "MAIN"
+  case checkif.FindString(value) != "":
+    return "IF"
+  case checknot.FindString(value) != "":
+    return "NOT"
   case blockopen.FindString(value) != "":
     return "BLOCK_OPEN"
   case blockclose.FindString(value) != "":

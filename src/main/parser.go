@@ -25,6 +25,32 @@ func Parse(lexer *Lexer, root *Treenode, endsymbol string) {
         }
       case "OPERATOR":
         toadd["OPERATION"] = curtoken.Value
+      case "IF":
+        toadd["IF"] = curtoken.Value
+
+        lexer.Next()
+        curtoken = *lexer.Gettoken()
+        if curtoken.Symbol != "BLOCK_OPEN" {
+          toadd["MISSING_TOKEN"] = "{"
+        } else {
+          root.Addnode(toadd)
+          toadd = make(map[string]interface{})
+          lexer.Next()
+          Parse(lexer, root.Lastnode(), "BLOCK_CLOSE")
+        }
+      case "NOT":
+        toadd["NOT"] = curtoken.Value
+
+        lexer.Next()
+        curtoken = *lexer.Gettoken()
+        if curtoken.Symbol != "BLOCK_OPEN" {
+          toadd["MISSING_TOKEN"] = "{"
+        } else {
+          root.Addnode(toadd)
+          toadd = make(map[string]interface{})
+          lexer.Next()
+          Parse(lexer, root.Lastnode(), "BLOCK_CLOSE")
+        }
       case "FUNC_HEADER":
         toadd["FUNC_HEADER"] = curtoken.Value
         fields := strings.SplitN(curtoken.Value, "#", 2)
