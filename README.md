@@ -4,19 +4,69 @@ A large domesticated ox with shaggy hair.
 As a programming language, it functions as an interpreted, 
 stack-based, postfix notation language created in go. 
 
-# How to Run
-If you compile the main package in go, the result will be
-an executable that takes one argument-the name of the file
-you wish to interpret. So if you wanted to run the 
-recursion program in this repo you would run:
+# How to Run 
 
-```
-$ go build main 
-$ ./main recursion.yak
+### Option 1 - Unix 
+If you don't have a go workspace set up but would like to: 
+[here is a good article detailing go workspaces.](https://medium.com/rungo/working-in-go-workspace-3b0576e0534a)
+
+If you have a go workspace set up with your `$GOPATH`
+set and `$GOBIN` in your path then it will be very easy. 
+Simply use `get` to grab this repo and `install` to create 
+the binary. Then you can just run the program which takes 
+the name of the file you wish to parse as an argument.
+
+For example, if you wanted to run one of the example programs
+included in this repo:
+
+```bash
+$ go get github.com/llewellyn-kevin/yak 
+$ go install yak 
+$ cp $GOPATH/src/github.com/llewellyn-kevin/yak/examples/recursion.yak .
+$ yak recursion.yak
 ```
 
-The interpreter is still in active development so this will 
-be replaced by a more permanent solution in the long run.
+### Option 2 - Unix
+If you are not a go developer and do not plan to be you 
+won't have the whole workspace set up. You will still have 
+to have [go installed](https://golang.org/doc/install), after 
+you do you will have to manually compile from this repo:
+
+```bash 
+$ git clone https://github.com/llewellyn-kevin/yak.git
+$ cd yak 
+$ go build yak
+```
+
+This will create an executable binary called yak you can 
+put anywhere you like (or just leave it).
+
+You can use this executable like normal: 
+```bash 
+$ ./yak examples/recursion.yak
+```
+And yak will interpret the recursion yak program. 
+
+Or you can add yak to your path to run it from anywhere on 
+your system. 
+```bash 
+$ export PATH=$PATH:$PWD/yak 
+$ cd examples 
+$ yak recursion.yak
+```
+You can add the `export` line with `$PWD` replaced with the 
+path to the yak binary to `~/.bash_profile` so the yak 
+command will work on terminal startup. 
+
+### Option 3 - Windows
+Go works in windows. So download the code, compile it, 
+and run the executable. I don't use Windows, so I wouldn't 
+even know how. But you do, so I hope you can.
+
+--------------------------------------------------------------------------------
+The interpreter is still in active development, when it is 
+closer to an official release I will add binaries that can
+be downloaded directly without having to compile using go.
 
 The output of the program will be the stack that results 
 from running the code. 
