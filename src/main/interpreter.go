@@ -54,7 +54,19 @@ func Interpret(root *Treenode, stack *Stack) *Stack {
           if erra == nil && errb == nil {
             stack.Put(d % c)
           }
+        case "==":
+          a, erra := getFloat(stack.Pop())
+          b, errb := getFloat(stack.Pop())
 
+          if erra == nil && errb == nil {
+            if a == b {
+              stack.Put(1)
+            } else {
+              stack.Put(0)
+            }
+          }
+        case ".":
+          stack.Put(stack.Peek())
         }
       case "IF":
         a, err := getFloat(stack.Pop())

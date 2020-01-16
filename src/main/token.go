@@ -19,7 +19,7 @@ func tokenlookup(value string) string {
 
   integer := regexp.MustCompile(`^\d+$`)
   float := regexp.MustCompile(`^\d+\.\d+$`)
-  operator := regexp.MustCompile(`^\+$|^\-$|^\*$|^/$|^%$`)
+  operator := regexp.MustCompile(`^\+$|^\-$|^\*$|^/$|^%$|^==$|^\.$`)
   identifier := regexp.MustCompile(`^[_\$a-zA-Z][_\a-zA-Z0-9]*$`)
   funcheader := regexp.MustCompile(`^\d+#[_\$a-zA-Z][_\a-zA-Z0-9]*$`)
 

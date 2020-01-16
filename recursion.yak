@@ -1,0 +1,7 @@
+1#factorial {
+  . 1 == ! {
+    . 1 - factorial *
+  }
+}
+
+5 factorial
