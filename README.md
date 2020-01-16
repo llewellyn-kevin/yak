@@ -83,17 +83,23 @@ The binary operators all take two values and return one,
 and are: `+, -, *, /, %, ==`
 
 `+` adds the two values and returns the result 
+
 `-` subtracts the top value from the second value and 
 returns the result
+
 `*` multiplies the two values and returns the result 
+
 `/` divides the second value by the top value and returns 
 the result 
+
 `%` divides the second value by the top value and returns 
 the remainder (expects integers)
+
 `==` compares the two values and returns 1 if they are the 
 same, otherwise 0 
 
-The only unary operator currently is: `.` 
+The unary operators take one value and return one, the only 
+unary operator currently is: `.` 
 
 `.` The duplication operator. This is necessary because 
 in most cases interacting with the stack observes values, 
@@ -109,6 +115,7 @@ After each control statement, yak requires a block of code.
 A block is defined by an open bracket, `{`, a set of 
 instructions, and then a close bracket, `}`. 
 
+### Functions
 A function definition takes the form: `n#identifier`, where
 n is the number of arguments, and the identifier is the name 
 of the function. 
@@ -133,6 +140,7 @@ Example:
 This increment function takes one argument, adds one, 
 and returns the result. 
 
+### Conditionals
 An if statement is simply the ternary operator from 
 other languages: `?`. When the interpreter sees the 
 conditional operator, it pops off the top of the stack 
@@ -180,5 +188,5 @@ Example 4:
 Here we duplicate the 10 and check its value. Because it 
 is not 1, it is false, and the block of code executes. 
 The duplicated 10 was popped of the stack by the `!`,
-But we preserved the origional 10 because of the `.`. 
+but we preserved the origional 10 because of the `.`. 
 This means we get `10 1 +`, or the expected value: 11.
