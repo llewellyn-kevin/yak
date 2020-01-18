@@ -17,6 +17,7 @@ func Interpret(root *Treenode, stack *Stack) *Stack {
         stack.Put(v)
       case "OPERATION":
         switch v {
+        // BINARY
         case "+":
           a, erra := getFloat(stack.Pop())
           b, errb := getFloat(stack.Pop())
@@ -109,6 +110,7 @@ func Interpret(root *Treenode, stack *Stack) *Stack {
               stack.Put(0)
             }
           }
+        // UNARY
         case ".":
           stack.Put(stack.Peek())
         }
