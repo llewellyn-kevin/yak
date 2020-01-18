@@ -65,6 +65,50 @@ func Interpret(root *Treenode, stack *Stack) *Stack {
               stack.Put(0)
             }
           }
+        case "<":
+          a, erra := getFloat(stack.Pop())
+          b, errb := getFloat(stack.Pop())
+
+          if erra == nil && errb == nil {
+            if a > b {
+              stack.Put(1)
+            } else {
+              stack.Put(0)
+            }
+          }
+        case "<=":
+          a, erra := getFloat(stack.Pop())
+          b, errb := getFloat(stack.Pop())
+
+          if erra == nil && errb == nil {
+            if a >= b {
+              stack.Put(1)
+            } else {
+              stack.Put(0)
+            }
+          }
+        case ">":
+          a, erra := getFloat(stack.Pop())
+          b, errb := getFloat(stack.Pop())
+
+          if erra == nil && errb == nil {
+            if a < b {
+              stack.Put(1)
+            } else {
+              stack.Put(0)
+            }
+          }
+        case ">=":
+          a, erra := getFloat(stack.Pop())
+          b, errb := getFloat(stack.Pop())
+
+          if erra == nil && errb == nil {
+            if a <= b {
+              stack.Put(1)
+            } else {
+              stack.Put(0)
+            }
+          }
         case ".":
           stack.Put(stack.Peek())
         }
@@ -84,7 +128,6 @@ func Interpret(root *Treenode, stack *Stack) *Stack {
             stack = Interpret(node, stack)
           }
         }
-
       case "FUNC_HEADER":
         funcnodes = append(funcnodes, node)
       case "FUNC_IDENTIFIER", "NUM_ARGS":
