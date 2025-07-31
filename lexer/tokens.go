@@ -12,10 +12,12 @@ const (
 	EOF     = "EOF"
 
 	// Identifiers
-	IDENT  = "IDENT"
+	IDENT = "IDENT"
+
+	// Literals
 	INT    = "INT"
 	FLOAT  = "FLOAT"
-	STRING = "STRING"
+	STRING = "STRING" // Not Implemented Yet
 	SYMBOL = "SYMBOL"
 
 	// Operators
@@ -50,19 +52,17 @@ const (
 	SQUOTE  = "SQUOTE"
 	DQUOTE  = "DQUOTE"
 
-	// ?
-	HYPHEN = "HYPHEN"
-
 	// Control
 	IF   = "IF"
 	NOT  = "NOT"
 	ELSE = "ELSE"
 	FOR  = "FOR"
 
-	// Keywords
+	// Assignments
 	ASSIGN  = "ASSIGN"
-	NASSIGN = "NASSIGN"
+	NASSIGN = "NASSIGN" // Not Implemented Yet
 
+	// Keywords
 	TRUE    = "TRUE"
 	FALSE   = "FALSE"
 	KBOOL   = "KBOOL"
@@ -77,7 +77,7 @@ const (
 	GET     = "GET"
 
 	YAKOUT         = "YAKOUT"
-	YAKINN         = "YAKIN"
+	YAKIN          = "YAKIN"
 	LITERAL_YAKOUT = "LITERAL_YAKOUT"
 	YAKUP          = "YAKUP"
 )
