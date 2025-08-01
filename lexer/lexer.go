@@ -162,8 +162,7 @@ var tokenMap = tMap{
 				return isDigit(peek)
 			},
 			func(ch []byte, l *Lexer) Token {
-				l.goBack(1)
-				return l.readNumber([]byte{'.'})
+				return l.readNumber(ch)
 			},
 		},
 	),
@@ -175,8 +174,7 @@ var tokenMap = tMap{
 				return isLetter(peek)
 			},
 			func(ch []byte, l *Lexer) Token {
-				l.goBack(1)
-				return l.readSymbol()
+				return l.readSymbol(ch)
 			},
 		},
 	),
@@ -191,8 +189,7 @@ var tokenMap = tMap{
 				return isDigit(peek) || (len(peek) == len([]byte{'.'}) && peek[0] == '.')
 			},
 			func(ch []byte, l *Lexer) Token {
-				l.goBack(1)
-				return l.readNumber([]byte{'-'})
+				return l.readNumber(ch)
 			},
 		},
 	),
@@ -215,7 +212,7 @@ func (l *Lexer) NextToken() (output Token) {
 		}
 
 		if isLetter(nextChar) {
-			output = l.readIdentifier()
+			output = l.readIdentifier(nextChar)
 		} else if isDigit(nextChar) {
 			output = l.readNumber(nextChar)
 		} else {
@@ -249,9 +246,7 @@ func lookupIdentifier(ident string) TokenType {
 	return IDENT
 }
 
-func (l *Lexer) readIdentifier() Token {
-	var buffer []byte
-	l.goBack(1)
+func (l *Lexer) readIdentifier(buffer []byte) Token {
 	for {
 		nextChar := make([]byte, 1)
 		n, err := l.Input.Read(nextChar)
@@ -277,7 +272,7 @@ func (l *Lexer) readIdentifier() Token {
 
 func (l *Lexer) readNumber(buffer []byte) Token {
 	isFloat := false
-	if buffer[0] == '.' {
+	if buffer[0] == '.' || (buffer[0] == '-' && buffer[1] == '.') {
 		isFloat = true
 	}
 
@@ -307,8 +302,7 @@ func (l *Lexer) readNumber(buffer []byte) Token {
 	return Token{INT, string(buffer)}
 }
 
-func (l *Lexer) readSymbol() Token {
-	buffer := []byte{':'}
+func (l *Lexer) readSymbol(buffer []byte) Token {
 	for {
 		n, err := l.nextChar()
 
