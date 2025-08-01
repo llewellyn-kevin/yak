@@ -21,17 +21,17 @@ func NewLexer(input ReadSeeker) *Lexer {
 	}
 }
 
-func (l *Lexer) nextChar() (byte, error) {
+func (l *Lexer) nextChar() ([]byte, error) {
 	nextChar := make([]byte, 1)
 	n, err := l.Input.Read(nextChar)
 	l.setOffset(l.offset + int64(n))
-	return nextChar[0], err
+	return nextChar, err
 }
 
-func (l *Lexer) nextWithoutWhitespace() (byte, error) {
-	nextChar := byte(' ')
+func (l *Lexer) nextWithoutWhitespace() ([]byte, error) {
+	nextChar := []byte{' '}
 	var err error
-	for (nextChar == ' ' || nextChar == '\t' || nextChar == '\n' || nextChar == '\r') && err == nil {
+	for len(nextChar) == 1 && (nextChar[0] == ' ' || nextChar[0] == '\t' || nextChar[0] == '\n' || nextChar[0] == '\r') && err == nil {
 		nextChar, err = l.nextChar()
 	}
 	return nextChar, err
@@ -110,13 +110,13 @@ func recursiveToken(fallback tokenOutputter, nextMap tMap, lHandlers ...logicalH
 
 		out, exists := nextMap[string(n)]
 		if exists {
-			ch = append(ch, n)
+			ch = append(ch, n...)
 			return out(ch, l)
 		}
 
 		for _, h := range lHandlers {
-			if h.check([]byte{n}) {
-				ch = append(ch, n)
+			if h.check(n) {
+				ch = append(ch, n...)
 				return h.scanner(ch, l)
 			}
 		}
@@ -159,7 +159,7 @@ var tokenMap = tMap{
 		tMap{},
 		logicalHandler{
 			func(peek []byte) bool {
-				return isDigit(peek[0]) // TODO: Use array for isDigit check
+				return isDigit(peek)
 			},
 			func(ch []byte, l *Lexer) Token {
 				l.goBack(1)
@@ -172,7 +172,7 @@ var tokenMap = tMap{
 		tMap{},
 		logicalHandler{
 			func(peek []byte) bool {
-				return isLetter(peek[0]) // TODO: Use array for isDigit check
+				return isLetter(peek)
 			},
 			func(ch []byte, l *Lexer) Token {
 				l.goBack(1)
@@ -188,7 +188,7 @@ var tokenMap = tMap{
 		},
 		logicalHandler{
 			func(peek []byte) bool {
-				return isDigit(peek[0]) || peek[0] == '.' // TODO: Use array for isDigit check
+				return isDigit(peek) || (len(peek) == len([]byte{'.'}) && peek[0] == '.')
 			},
 			func(ch []byte, l *Lexer) Token {
 				l.goBack(1)
@@ -210,14 +210,14 @@ func (l *Lexer) NextToken() (output Token) {
 
 		t, exists := tokenMap[string(nextChar)]
 		if exists {
-			output = t([]byte{nextChar}, l)
+			output = t(nextChar, l)
 			continue
 		}
 
 		if isLetter(nextChar) {
 			output = l.readIdentifier()
 		} else if isDigit(nextChar) {
-			output = l.readNumber([]byte{nextChar})
+			output = l.readNumber(nextChar)
 		} else {
 			output = Token{ILLEGAL, string(nextChar)}
 		}
@@ -226,12 +226,20 @@ func (l *Lexer) NextToken() (output Token) {
 	return
 }
 
-func isLetter(ch byte) bool {
-	return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '_'
+func isLetter(ch []byte) bool {
+	if len(ch) > len([]byte{'a'}) {
+		return false
+	}
+	b := ch[0]
+	return (b >= 'a' && b <= 'z') || (b >= 'A' && b <= 'Z') || b == '_'
 }
 
-func isDigit(ch byte) bool {
-	return ch >= '0' && ch <= '9'
+func isDigit(ch []byte) bool {
+	if len(ch) > len([]byte{'0'}) {
+		return false
+	}
+	b := ch[0]
+	return b >= '0' && b <= '9'
 }
 
 func lookupIdentifier(ident string) TokenType {
@@ -255,7 +263,7 @@ func (l *Lexer) readIdentifier() Token {
 			}
 			l.goBack(int64(n))
 			break
-		} else if err == io.EOF || (!isLetter(nextChar[0]) && !isDigit(nextChar[0]) && nextChar[0] != '_') {
+		} else if err == io.EOF || (!isLetter(nextChar) && !isDigit(nextChar) && nextChar[0] != '_') {
 			l.goBack(int64(n))
 			break
 		}
@@ -280,7 +288,7 @@ func (l *Lexer) readNumber(buffer []byte) Token {
 			break
 		}
 
-		if n == byte('.') {
+		if n[0] == '.' {
 			if isFloat {
 				l.goBack(1)
 				break
@@ -291,7 +299,7 @@ func (l *Lexer) readNumber(buffer []byte) Token {
 			break
 		}
 
-		buffer = append(buffer, n)
+		buffer = append(buffer, n...)
 	}
 	if isFloat {
 		return Token{FLOAT, string(buffer)}
@@ -308,12 +316,12 @@ func (l *Lexer) readSymbol() Token {
 			break
 		}
 
-		if !isLetter(n) && !isDigit(n) && n != '-' {
+		if !isLetter(n) && !isDigit(n) && n[0] != '-' {
 			l.goBack(1)
 			break
 		}
 
-		buffer = append(buffer, n)
+		buffer = append(buffer, n...)
 	}
 
 	return Token{SYMBOL, string(buffer)}
