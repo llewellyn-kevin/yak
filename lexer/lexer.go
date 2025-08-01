@@ -37,21 +37,19 @@ func (l *Lexer) nextWithoutWhitespace() (byte, error) {
 	return nextChar, err
 }
 
-func (l *Lexer) peekChar() (bool, byte, func() (int64, error)) {
-	advancer := func() (int64, error) {
-		l.offset += 1
-		return l.Input.Seek(int64(l.offset), 0)
+func (l *Lexer) setOffset(offset int64) {
+	if offset < 0 {
+		offset = 0
 	}
-
-	char := make([]byte, 1)
-	l.Input.Read(char)
-	_, err := l.Input.Seek(int64(l.offset), 0)
-	if err == io.EOF {
-		return true, byte(0), advancer
-	}
-	return false, char[0], advancer
+	l.offset = offset
+	l.Input.Seek(l.offset, io.SeekStart)
 }
 
+func (l *Lexer) goBack(amount int64) {
+	l.setOffset(l.offset - amount)
+}
+
+// A map of byte arrays representing keywords to their correct token.
 var Keywords = map[string]TokenType{
 	"if":      IF,
 	"not":     NOT,
@@ -74,9 +72,134 @@ var Keywords = map[string]TokenType{
 	"yakout!": LITERAL_YAKOUT,
 }
 
-func (l *Lexer) NextToken() (output Token) {
-	var buffer []byte
+// A function that takes a char array and returns a token.
+type tokenOutputter func(ch []byte, l *Lexer) Token
 
+// Maps characters to their tokens via token outputters.
+type tMap map[string]tokenOutputter
+
+// Returns a closure that returns the token for any symbol that is only a
+// single character or is on the last character, so no lookahead is needed.
+func terminalToken(t TokenType) tokenOutputter {
+	return func(ch []byte, _ *Lexer) Token {
+		return Token{t, string(ch)}
+	}
+}
+
+// Struct used to hold logical checks where matching a token is more complex
+// than matching a single character.
+type logicalHandler struct {
+	check   func(peek []byte) bool
+	scanner tokenOutputter
+}
+
+// Returns a closure to handle reading multi-character tokens.
+// fallback is the token to return if no match is found in the map.
+// nextMap is the map of functions that return tokens with the symbols as
+// their keys.
+// lHandlers are an optional list of logicalHandlers. If the check function
+// for the handler returns true, the scanner function will be executed to get
+// the token. Otherwise this will be skipped. This can be used for checks where
+// multiple characters are valid for the given token.
+func recursiveToken(fallback tokenOutputter, nextMap tMap, lHandlers ...logicalHandler) tokenOutputter {
+	return func(ch []byte, l *Lexer) Token {
+		n, err := l.nextChar()
+		if err == io.EOF {
+			return fallback(ch, l)
+		}
+
+		out, exists := nextMap[string(n)]
+		if exists {
+			ch = append(ch, n)
+			return out(ch, l)
+		}
+
+		for _, h := range lHandlers {
+			if h.check([]byte{n}) {
+				ch = append(ch, n)
+				return h.scanner(ch, l)
+			}
+		}
+
+		l.goBack(1)
+		return fallback(ch, l)
+	}
+}
+
+// Maps byte arrays representing tokens to their token outputers.
+var tokenMap = tMap{
+	"*":  terminalToken(MULT),
+	"/":  terminalToken(DIV),
+	"%":  terminalToken(MOD),
+	"=":  terminalToken(EQ),
+	"^":  terminalToken(BXOR),
+	"&":  terminalToken(BAND),
+	"|":  terminalToken(BOR),
+	"#":  terminalToken(HASH),
+	"{":  terminalToken(LBRACE),
+	"}":  terminalToken(RBRACE),
+	"(":  terminalToken(LPAREN),
+	")":  terminalToken(RPARENT),
+	"'":  terminalToken(SQUOTE),
+	"\"": terminalToken(DQUOTE),
+	"+": recursiveToken(terminalToken(ADD), tMap{
+		"+": terminalToken(INC),
+	}),
+	"<": recursiveToken(terminalToken(LT), tMap{
+		"=": terminalToken(LTEQ),
+		">": terminalToken(SWAP),
+		"<": terminalToken(LSHIFT),
+	}),
+	">": recursiveToken(terminalToken(GT), tMap{
+		"=": terminalToken(GTEQ),
+		">": terminalToken(RSHIFT),
+	}),
+	".": recursiveToken(
+		terminalToken(DUP),
+		tMap{},
+		logicalHandler{
+			func(peek []byte) bool {
+				return isDigit(peek[0]) // TODO: Use array for isDigit check
+			},
+			func(ch []byte, l *Lexer) Token {
+				l.goBack(1)
+				return l.readNumber([]byte{'.'})
+			},
+		},
+	),
+	":": recursiveToken(
+		terminalToken(COLON),
+		tMap{},
+		logicalHandler{
+			func(peek []byte) bool {
+				return isLetter(peek[0]) // TODO: Use array for isDigit check
+			},
+			func(ch []byte, l *Lexer) Token {
+				l.goBack(1)
+				return l.readSymbol()
+			},
+		},
+	),
+	"-": recursiveToken(
+		terminalToken(SUB),
+		tMap{
+			"-": terminalToken(DEC),
+			">": terminalToken(ASSIGN),
+		},
+		logicalHandler{
+			func(peek []byte) bool {
+				return isDigit(peek[0]) || peek[0] == '.' // TODO: Use array for isDigit check
+			},
+			func(ch []byte, l *Lexer) Token {
+				l.goBack(1)
+				return l.readNumber([]byte{'-'})
+			},
+		},
+	),
+}
+
+// Get the next semantically relevant token.
+func (l *Lexer) NextToken() (output Token) {
 	for output.Type == "" {
 		nextChar, err := l.nextWithoutWhitespace()
 
@@ -85,127 +208,18 @@ func (l *Lexer) NextToken() (output Token) {
 			return
 		}
 
-		buffer = append(buffer, nextChar)
-		switch string(buffer) {
-		// Single Chars
-		case "*":
-			output = Token{MULT, string(buffer)}
-		case "/":
-			output = Token{DIV, string(buffer)}
-		case "%":
-			output = Token{MOD, string(buffer)}
-		case "=":
-			output = Token{EQ, string(buffer)}
-		case "^":
-			output = Token{BXOR, string(buffer)}
-		case "&":
-			output = Token{BAND, string(buffer)}
-		case "|":
-			output = Token{BOR, string(buffer)}
+		t, exists := tokenMap[string(nextChar)]
+		if exists {
+			output = t([]byte{nextChar}, l)
+			continue
+		}
 
-		// Delimiters
-		case "#":
-			output = Token{HASH, string(buffer)}
-		case "{":
-			output = Token{LBRACE, string(buffer)}
-		case "}":
-			output = Token{RBRACE, string(buffer)}
-		case "(":
-			output = Token{LPAREN, string(buffer)}
-		case ")":
-			output = Token{RPARENT, string(buffer)}
-		case "'":
-			output = Token{SQUOTE, string(buffer)}
-		case "\"":
-			output = Token{DQUOTE, string(buffer)}
-
-		case ".":
-			_, peeked, _ := l.peekChar()
-			if isDigit(peeked) {
-				output = l.readNumber([]byte{'.'})
-			} else {
-				output = Token{DUP, string(buffer)}
-			}
-
-		case ":":
-			_, peeked, _ := l.peekChar()
-			if isLetter(peeked) {
-				output = l.readSymbol()
-			} else {
-				output = Token{COLON, string(buffer)}
-			}
-
-			// Single / Double
-		case "+": // + or ++
-			if eof, peeked, advancer := l.peekChar(); eof || peeked != byte('+') {
-				output = Token{ADD, "+"}
-			} else {
-				output = Token{INC, "++"}
-				advancer()
-			}
-		case "-": // - or -- or ->
-			eof, peeked, advancer := l.peekChar()
-			if eof {
-				output = Token{SUB, "-"}
-			}
-
-			switch true {
-			case peeked == byte('-'):
-				output = Token{DEC, "--"}
-				advancer()
-			case peeked == byte('>'):
-				output = Token{ASSIGN, "->"}
-				advancer()
-			case isDigit(peeked) || peeked == byte('.'):
-				output = l.readNumber([]byte{'-'})
-			default:
-				output = Token{SUB, "-"}
-			}
-		case "<": // < or <= or <> or <<
-			eof, peeked, advancer := l.peekChar()
-			if eof {
-				output = Token{LT, "<"}
-			}
-
-			switch peeked {
-			case byte('='):
-				output = Token{LTEQ, "<="}
-				advancer()
-			case byte('<'):
-				output = Token{LSHIFT, "<<"}
-				advancer()
-			case byte('>'):
-				output = Token{SWAP, "<>"}
-				advancer()
-			default:
-				output = Token{LT, "<"}
-			}
-		case ">": // > or >= or >>
-			eof, peeked, advancer := l.peekChar()
-			if eof {
-				output = Token{GT, ">"}
-			}
-
-			switch peeked {
-			case byte('='):
-				output = Token{GTEQ, ">="}
-				advancer()
-			case byte('>'):
-				output = Token{RSHIFT, ">>"}
-				advancer()
-			default:
-				output = Token{GT, ">"}
-			}
-
-		// Keywords
-		default:
-			if isLetter(buffer[0]) {
-				output = l.readIdentifier()
-			} else if isDigit(buffer[0]) {
-				output = l.readNumber(buffer)
-			} else {
-				output = Token{ILLEGAL, string(buffer)}
-			}
+		if isLetter(nextChar) {
+			output = l.readIdentifier()
+		} else if isDigit(nextChar) {
+			output = l.readNumber([]byte{nextChar})
+		} else {
+			output = Token{ILLEGAL, string(nextChar)}
 		}
 	}
 
@@ -225,18 +239,6 @@ func lookupIdentifier(ident string) TokenType {
 		return tok
 	}
 	return IDENT
-}
-
-func (l *Lexer) setOffset(offset int64) {
-	if offset < 0 {
-		offset = 0
-	}
-	l.offset = offset
-	l.Input.Seek(l.offset, io.SeekStart)
-}
-
-func (l *Lexer) goBack(amount int64) {
-	l.setOffset(l.offset - amount)
 }
 
 func (l *Lexer) readIdentifier() Token {
