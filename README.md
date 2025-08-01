@@ -4,239 +4,295 @@ A large domesticated ox with shaggy hair.
 As a programming language, it functions as an interpreted, 
 stack-based, postfix notation language created in go. 
 
-# How to Run 
+## Breakdown of ideas
 
-### Option 1 - Unix 
-If you don't have a go workspace set up but would like to: 
-[here is a good article detailing go workspaces.](https://medium.com/rungo/working-in-go-workspace-3b0576e0534a)
+data structures
+- list - just a variable, variables are all named stacks
+- dict
+- symbols - essentially enum values that can be defined in real time, like ruby. Preceded by a colon
 
-If you have a go workspace set up with your `$GOPATH`
-set and `$GOBIN` in your path then it will be very easy. 
-Simply use `get` to grab this repo and `install` to create 
-the binary. Then you can just run the program which takes 
-the name of the file you wish to parse as an argument.
+control structures
+- conditional
+- loop - python style, go through stack until empty, have a way to generate a stack of numbers up to value
+- function - take args off the stack, and 
 
-For example, if you wanted to run one of the example programs
-included in this repo:
+Operators
+----------
+binary operations (v1 - top of stack, v2 next to top value)
+- `+` := v2 + v1
+- `-` := v2 - v1
+- `*` := v2 \* v1
+- `/` := v2 / v1
+- `%` := v2 % v1
+- `<` := return 1 if v2 < v1 else 0
+- `>` := return 1 if v2 > v1 else 0
+- `>=` := return 1 if v2 >= v1 else 0
+- `<=` := return 1 if v2 <= v1 else 0
+- `=` := return 1 if v2 == v1 else 0
+- `<>` := swap v1 and v2
+- `|` := v2 | v1 (OR)
+- `&` := v2 & v1 (AND)
+- `^` := v2 ^ v1 (XOR)
 
-```bash
-$ go get github.com/llewellyn-kevin/yak 
-$ go install yak 
-$ cp $GOPATH/src/github.com/llewellyn-kevin/yak/examples/recursion.yak .
-$ yak recursion.yak
-```
+unary operations
+- `.` := duplicate top value
+- `++` := increment top value
+- `--` := decrement top value
+- `<<` := left shift
+- `>>` := right shift
 
-### Option 2 - Unix
-If you are not a go developer and do not plan to be you 
-won't have the whole workspace set up. You will still have 
-to have [go installed](https://golang.org/doc/install), after 
-you do you will have to manually compile from this repo:
-
-```bash 
-$ git clone https://github.com/llewellyn-kevin/yak.git
-$ cd yak 
-$ go build yak
-```
-
-This will create an executable binary called yak you can 
-put anywhere you like (or just leave it).
-
-You can use this executable like normal: 
-```bash 
-$ ./yak examples/recursion.yak
-```
-And yak will interpret the recursion yak program. 
-
-Or you can add yak to your path to run it from anywhere on 
-your system. 
-```bash 
-$ export PATH=$PATH:$PWD/yak 
-$ cd examples 
-$ yak recursion.yak
-```
-You can add the `export` line with `$PWD` replaced with the 
-path to the yak binary to `~/.bash_profile` so the yak 
-command will work on terminal startup. 
-
-### Option 3 - Windows
-Go works in windows. So download the code, compile it, 
-and run the executable. I don't use Windows, so I wouldn't 
-even know how. But you do, so I hope you can.
-
---------------------------------------------------------------------------------
-The interpreter is still in active development, when it is 
-closer to an official release I will add binaries that can
-be downloaded directly without having to compile using go.
-
-The output of the program will be the stack that results 
-from running the code. 
-
-# How to Write
-Every value the interpreter finds in a program gets placed 
-on the stack. Each operation interacts with the values on 
-the stack, in most cases popping some off and, and always
-placing the result on the top. 
-
-For example: the `+` binary operator, takes the two top
-values from the stack, adds them, and pushes the result to 
-the stack. 
-
-So a program that reads: 
-```
-1| 5 10
-```
-will result in a stack:
-```
-0: 10
-1: 5
-``` 
-
-But a program that reads:
-```
-1| 5 10 +
-``` 
-will result in a stack:
-```
-0: 15
-```
-
-The lexer seperates all tokens by whitespace. This means 
-all inputs and operations must be seperated by spaces, 
-linebreaks, or tabs. Which is used is irrelavent. That 
-means:
+Variables
+------
+`-> i` := put the value on top of the main stack into stack i
+`=> i` := put `n` values in stack i, where n is the current top of the stack. The values are copied in current order
+`i` := pop the value of stack i into the main stack
+`.i` := read the value off of the i stack and put it on the current main stack (duplicate & pop)
+`<>i` := swap the two values on top of stack i
+`{i /** code */}` := execute a code block with i as the main stack
+`yakup` pop a value off of the parent main stack if in a code block
+`yakupup` to get up multiple scopes, up can be repeated
+`-> {/** code */}` := create a new anonymous block where the value of the arrow is the value of the main function
+`i:types` := specify the types that are allowed to be put in stack i
 
 ```
-1| 1 
-2| 2
-3| +
-4| 3
-5| *
+5 -> newStack
+// yakout throws an error, main stack empty
+.newStack yakout
+// Prints: 5
+newStack yakout
+// Prints: 5
+// newStack now prints an error for an empty stack
+
+1 2 3 3 => secondStack
+{secondStack
+	yakout yakout yakout
+	// Prints 1\n2\n3
+}
+
+9 8 7 3 => {
+	yakout yakout yakout
+	// Prints 9\n8\n7
+}
+
+'foo' 1 2 -> integerStack:int // Puts 2 in integer stack
+-> integerStack // Puts 1 in integer stack
+// -> integerStack // InvalidValueError trying to put 'foo' in integerStack
 ```
-and 
+
+Supported Types
+-------
+`int`
+`float`
+`string`
+`bool`
+`symbol`
+
 ```
-1| 1 2
-2| + 3      *
-``` 
-and even
+1 -> iStack:int
+1.5 -> fStack:float
+'one' -> sStack:string
+:one -> syStack:symbol
+
+1 :one 2 => unionStack:int|symbol
+// 'one' -> unionStack // InvalidValueError
+
+// string literals are interpreted as specific symbol ids
+:one -> specificSymbolStack:one|two|three // valid
+:three -> specificSymbolStack // valid
+// :too -> specificSymbolStack // invalid
+
+
 ```
-1| 1 2 + 3 *
+
+Conditionals
+--------
+`if { }` := evaluate the code block if the top of the stack is truthy
+`not { }` := evaluate the code block if the top of the stack is falsy
+`if { } : { }` := evaluate the first block if the top of the stack is truthy, otherwise execute the second code block
+
 ```
-are all valid yak, and do the same thing. But:
+1 2 = {
+	'truthy' yakout
+} : {
+	'falsey' yakout
+}
+
+// Prints falsey
 ```
-1| 1 2+ 3* 
+
+For
+-----
+`for` := when this keyword appears in a scoped block, then when the end of the block is reached, the code returns to for until the main stack for the block is empty
+
+`min max increment range -> var` := put the numbers between min and max with increment inc into stack var
+
 ```
-is invalid. 
+1 10 2 range -> i
+{i for
+	yakout
+}
 
-
-## Operators
-The binary operators all take two values and return one, 
-and are: `+, -, *, /, %, ==`
-
-`+` adds the two values and returns the result 
-
-`-` subtracts the top value from the second value and 
-returns the result
-
-`*` multiplies the two values and returns the result 
-
-`/` divides the second value by the top value and returns 
-the result 
-
-`%` divides the second value by the top value and returns 
-the remainder (expects integers)
-
-`==` compares the two values and returns 1 if they are the 
-same, otherwise 0 
-
-The unary operators take one value and return one, the only 
-unary operator currently is: `.` 
-
-`.` The duplication operator. This is necessary because 
-in most cases interacting with the stack observes values, 
-and in most cases, observing the thing also destroys the 
-thing. This operator copies the top value from the stack, 
-and adds the duplicate to the stack. 
-
-## Control Statements
-There are currently 3 control statements: a function 
-definition, an if statement, and an if not statement. 
-
-After each control statement, yak requires a block of code. 
-A block is defined by an open bracket, `{`, a set of 
-instructions, and then a close bracket, `}`. 
-
-### Functions
-A function definition takes the form: `n#identifier`, where
-n is the number of arguments, and the identifier is the name 
-of the function. 
-
-A function is called simply by placing the function name 
-in a block of code when there are at least `n` arguments on 
-the stack. 
-
-When a function is called the interpreter creates a new 
-stack outside the main one named after the function. 
-it then pops `n` values off the main stack, and pushes them 
-onto the new function stack. After running the code in the 
-function block, the top value from the function stack will 
-returned to the main stack.
-
-Example: 
+// Prints: 1, 3, 5, 7, 9
 ```
-1| 1#increment {
-2|   1 +
-3| }
-```
-This increment function takes one argument, adds one, 
-and returns the result. 
 
-### Conditionals
-An if statement is simply the ternary operator from 
-other languages: `?`. When the interpreter sees the 
-conditional operator, it pops off the top of the stack 
-and checks its value. If it is 1, it executes the following
-code block. If it is not 1, it does not. 
+Key-Value Store
+---------
+there is a global key value store that is represented as a hash table in the interpreter. by default this key value store has the settings used for input and output with the yak functions. this can be set and read with `set` and `get` functions:
 
-Example: 
 ```
-1| 10
-2| 5 5 == ? { 1 + }
-```
-This will push 10, 5, and 5 onto the stack. Then the `==`
-will compare the top two values, see they are the same and 
-replace them with `1`. The `?` will pop the `1` off the 
-stack and execute the code block. This code block pushes 
-a `1` onto the stack and adds it to the remaining value,
-ultimately returning 11.
+// Schema {value} {collection} {key} set
 
-Example 2:
-```
-1| 10
-2| 6 5 == ? { 1 + }
-```
-Ultimately this is the same example, but `6 5 ==`
-returns `0` instead of `1`. This means the block after 
-`?` never executes and 10 is ultimately returned.
+'bar' :new-collection :foo set
 
-The if not statement is simply a `!`. It functions the same 
-as the conditional operator, except the block of code 
-executes if the value observed on the stack is not 1.
+:new-collection :foo get
+yakout
 
-Example 3:
+// Prints: bar
 ```
-1| 10
-2| 6 5 == ! { 1 + }
-```
-In this example, the value 0 will be checked, which is 
-not 1, so the block will execute. This would also work if 
-10 was checked. 
 
-Example 4: 
+the order of the function may seem counterintuitive, but the value should be first so it can just come from the top of the main stack if needed. The key being last allows autocomplete with known keys for the collection
+
+values in the store are invalidated when the current block exits. To prevent this tag it with a global scope (using `setg` function):
+
 ```
-1| 10 . ! { 1 + }
+42 -> foo
+{foo
+	. :global-collection :foo setg
+	:local-collection :foo set
+}
+
+:global-collection :foo get yakout
+// Prints: 42
+// :local-collection :foo get yakout // throws an error
 ```
-Here we duplicate the 10 and check its value. Because it 
-is not 1, it is false, and the block of code executes. 
-The duplicated 10 was popped of the stack by the `!`,
-but we preserved the origional 10 because of the `.`. 
-This means we get `10 1 +`, or the expected value: 11.
+
+set valid inputs for hash key value. Unknown types are treated as symbols, known types are that type.
+
+```
+:collection :ui-mode 'light|dark' setopts
+// allows :light or :dark
+
+:yakin :file-scanner 'characters|lines|tokens|string' setopts
+// allows any string, :characters, :lines, :tokens
+```
+
+Functions
+---------
+definition: `arg_list#func_name#return_list { }`
+to invoke: `func_name`
+to invoke and store values in named stack: `func_name -> var`
+if you want to invoke functions multiple times add one or several `.` to the end of the identifier
+
+```
+', ' :yak out-del set
+
+1#add5#1 {
+	5 +
+}
+
+10 add5 yakout
+// Prints: 15
+
+10 add5.. yakout
+// Prints: 25
+
+1 add5 -> added
+2 add5 -> added
+3 add5 -> added
+{added for yakout}
+// Prints 6, 7, 8
+
+4 5 6 add5.. -> addedTwo
+{addedTwo for yakout}
+// Prints 9, 10, 11
+
+(2:int)#simpleAdder#(1:int) {
+	+
+}
+
+3 6 simpleAdder yakout
+// Prints: 9
+// '1' 2 simpleAdder throws an invalid argument error
+```
+
+`arg_list` := `(2:int 3:string)` --- the initialized stack must be 3 strings than 2 ints
+    | `arg_list` := `2` --- the initialized stack takes 2 values of any type
+	| `arg_list` := (2:int|sting) --- union types, int or string
+`return_list` is the same format as arg list, but can also be empty, returning only 1 value
+
+
+I/O settings
+----------
+`yakout` pops the current value and prints to desired output
+`yakout!` same as above, but don't add delimiters
+`yakin` puts the next input value on the stack
+
+Use the setyak function to determine how to read input and where to send output
+
+- settings:
+	- `value :yak key set` := takes a setting and value off the stack and changes current input output methods
+- valid `:in-type`
+	- `:args` := read the next argv
+	- `:file` := treat argument as a file, 
+- valid `:file-scanner`
+	- `:characters`
+	- `:tokens`
+	- `:lines`
+	- `string` := arbitrary string(s) with a delimiter to use for separating tokens (e.g. ',', '\n' for csv)
+- valid `:out-type`
+	- `:stdout` := prints to stdout
+	- `:file` := prints to file
+- valid `:out-file`
+	- `string` := string for the current filename to write out to
+- valid `:out-del`
+	- `string` := arbitrary strings, (e.g. ',' for csv)
+	- `:new-line` := newline character
+	- `:space` := a single space
+
+Bash Commands
+--------
+IDK yet
+
+
+
+CFG
+--------
+
+All operators with their name as token
+All keywords with their name as token
+
+OP -> `PLUS|MINUS|MULT|DIV|MOD|IF|RSHIFT` etc...
+
+ASSIGN -> `->`
+NASSIGN -> `n->`
+LEFT_PAREN -> `(`
+RIGHT_PAREN -> `)`
+LEFT_BRACKET -> `{`
+RIGHT_BRACKET -> `}`
+HASH -> `#`
+
+NUMBER -> `[0-9]+`
+CHARACTER -> `[a-zA-Z]+`
+
+TYPE -> `bool|int|float|string|symbol|SYMBOL_NAME
+
+IDENTIFIER -> `[CHARACTER|NUMBER|_]+`
+SYMBOL_ID -> `[CHARACTER|NUMBER|-]+`
+
+SYMBOL_DECLARATION -> `COLONSYMBOL_ID`
+
+HYPHEN -> `-`
+
+SINGLE_QUOTE -> `'`
+DOUBLE_QUOTE -> `"`
+STRING_LITERAL -> `SINGLE_QUOTE.*SINGLE_QUOTE|DOUBLE_QUOTE.*DOUBLE_QUOTE
+INT_LITERAL -> `HYPHENNUM+|NUM+`
+FLOAT_LITERAL -> `HYPHENNUM+.NUM+|NUM+.NUM+`
+TRUE -> true
+FALSE -> false
+
+TYPED_ARG -> `NUM:TYPE`
+
+ARG_LIST -> `NUM|(TYPED_ARG+)`
+VARIABLE -> IDENTIFIER
+FUNCTION -> `ARG_LIST#IDENTIFIER|ARG_LIST#IDENTIFIER#ARG_LIST [WHITESPACE|LEFT_BRACKET]`
