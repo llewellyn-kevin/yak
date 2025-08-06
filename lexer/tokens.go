@@ -1,10 +1,16 @@
 package lexer
 
+import "fmt"
+
 type TokenType string
 
 type Token struct {
 	Type    TokenType
 	Literal string
+}
+
+func (t Token) String() string {
+	return fmt.Sprintf("(%s %s)", t.Type, t.Literal)
 }
 
 const (
