@@ -55,8 +55,8 @@ const (
 	RPARENT = "RPAREN"
 	HASH    = "HASH"
 	COLON   = "COLON"
-	SQUOTE  = "SQUOTE"
-	DQUOTE  = "DQUOTE"
+	SQUOTE  = "SQUOTE" // Not yet in parser
+	DQUOTE  = "DQUOTE" // Not yet in parser
 
 	// Control
 	IF   = "IF"
@@ -72,15 +72,15 @@ const (
 	TRUE    = "TRUE"
 	FALSE   = "FALSE"
 	KBOOL   = "KBOOL"
-	KINT    = "INT"
+	KINT    = "KINT"
 	KFLOAT  = "KFLOAT"
 	KSTRING = "KSTRING"
 	KSYMBOL = "KSYMBOL"
 
-	SET     = "SET"
-	SETG    = "SETG"
-	SETOPTS = "SETOPTS"
-	GET     = "GET"
+	SET     = "SET"     // Not yet in parser
+	SETG    = "SETG"    // Not yet in parser
+	SETOPTS = "SETOPTS" // Not yet in parser
+	GET     = "GET"     // Not yet in parser
 
 	YAKOUT         = "YAKOUT"
 	YAKIN          = "YAKIN"
