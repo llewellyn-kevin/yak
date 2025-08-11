@@ -48,12 +48,12 @@ var Keywords = map[string]TokenType{
 var tokenMap = tMap{
 	"*":  terminalToken(MULT),
 	"/":  terminalToken(DIV),
-	"%":  terminalToken(MOD),
 	"=":  terminalToken(EQ),
 	"^":  terminalToken(BXOR),
 	"&":  terminalToken(BAND),
 	"|":  terminalToken(BOR),
 	"#":  terminalToken(HASH),
+	":":  terminalToken(COLON),
 	"{":  terminalToken(LBRACE),
 	"}":  terminalToken(RBRACE),
 	"(":  terminalToken(LPAREN),
@@ -84,8 +84,8 @@ var tokenMap = tMap{
 			},
 		},
 	),
-	":": recursiveToken(
-		terminalToken(COLON),
+	"%": recursiveToken(
+		terminalToken(MOD),
 		tMap{},
 		logicalHandler{
 			func(peek []byte) bool {

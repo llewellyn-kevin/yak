@@ -193,21 +193,21 @@ func TestNumbers(t *testing.T) {
 }
 
 func TestSymbols(t *testing.T) {
-	reader := strings.NewReader(":foo :foo-bar :-f :0b :m0m :mt-4 :fizz-buzz-")
+	reader := strings.NewReader("%foo %foo-bar %-f %0b %m0m %mt-4 %fizz-buzz-")
 	lexer := NewLexer(reader)
 
 	expected := []Token{
-		{SYMBOL, ":foo"},
-		{SYMBOL, ":foo-bar"},
-		{COLON, ":"},
+		{SYMBOL, "%foo"},
+		{SYMBOL, "%foo-bar"},
+		{MOD, "%"},
 		{SUB, "-"},
 		{IDENT, "f"},
-		{COLON, ":"},
+		{MOD, "%"},
 		{INT, "0"},
 		{IDENT, "b"},
-		{SYMBOL, ":m0m"},
-		{SYMBOL, ":mt-4"},
-		{SYMBOL, ":fizz-buzz-"},
+		{SYMBOL, "%m0m"},
+		{SYMBOL, "%mt-4"},
+		{SYMBOL, "%fizz-buzz-"},
 		{EOF, ""},
 	}
 
