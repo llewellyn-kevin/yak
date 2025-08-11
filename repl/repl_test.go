@@ -41,7 +41,7 @@ func TestCanPrint(t *testing.T) {
 		">>> ",
 		">>> ",
 		"(HASH #)\n",
-        "Illegal token: $\n",
+		"Illegal token: $\n",
 		">>> ",
 		"Goodbye!\n",
 	})

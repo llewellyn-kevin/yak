@@ -1,6 +1,6 @@
 # Context-Free Grammar for the Yak Language
 
-Statements
+Root
 ```
 S -> S* S | epsilon 
 S* -> Z | F
@@ -8,13 +8,13 @@ Z -> Z* Z | epsilon
 Z* -> A | C | W | O | L
 ```
 
-Assignment
+Assignment - Statements
 ```
 A -> assign ident A*
 A* -> colon T | epsilon
 ```
 
-Conditionals
+Conditionals - Statements
 ```
 C -> I | I E | N | N E
 I -> if B
@@ -24,12 +24,12 @@ B -> lbrace Z rbrace
 B' -> lbrace ident Z rbrace
 ```
 
-For Loops
+For Loops - Statement
 ```
 W -> for B | for B' 
 ```
 
-Function Definitions
+Function Definitions - Statements
 ```
 F -> A hash ident F* B
 F* -> hash A | epsilon
@@ -41,13 +41,13 @@ Y* -> pipe Y Y* | pipe Y | epsilon
 Y -> ident | kbool | kint | kfloat | kstring | ksymbol
 ```
 
-Operations
+Operations - Expressions
 ```
 O -> add | sub | mult | div | mod | lt | gt | lteq | gteq | eq | swap | bor | band | bxor |
      dup | inc | dec | lshift | rshift | yakout | yakin | literal_yakout | yakup
 ```
 
-Literals
+Literals - Statements
 ```
 L -> true, false, int, float, string, symbol
 ```
