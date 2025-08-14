@@ -87,6 +87,110 @@ func TestRdLiteral(t *testing.T) {
 	checkMultiString(t, actual, expected)
 }
 
+func TestRdOperands(t *testing.T) {
+	p, err := parser.NewParserFactory().
+		Use(parser.RECURSIVE_DESCENT_STRATEGY).
+		Get(lexer.NewLexer(strings.NewReader(`+ - * / % < > <= >= = <> | & ^ << >>
+. ++ -- yakout yakin yakout! yakup`)))
+	program := ensureValidProgram(t, 23, p, err)
+	actual := program.String()
+
+	expected := `{
+  token: binary-operator
+  type: add
+}
+{
+  token: binary-operator
+  type: subtract
+}
+{
+  token: binary-operator
+  type: multiply
+}
+{
+  token: binary-operator
+  type: divide
+}
+{
+  token: binary-operator
+  type: mod
+}
+{
+  token: binary-operator
+  type: less-than
+}
+{
+  token: binary-operator
+  type: greater-than
+}
+{
+  token: binary-operator
+  type: less-than-or-equal
+}
+{
+  token: binary-operator
+  type: greater-than-or-equal
+}
+{
+  token: binary-operator
+  type: equal
+}
+{
+  token: binary-operator
+  type: swap
+}
+{
+  token: binary-operator
+  type: binary-or
+}
+{
+  token: binary-operator
+  type: binary-and
+}
+{
+  token: binary-operator
+  type: binary-xor
+}
+{
+  token: binary-operator
+  type: left-shift
+}
+{
+  token: binary-operator
+  type: right-shift
+}
+{
+  token: unary-operator
+  type: duplicate
+}
+{
+  token: unary-operator
+  type: increment
+}
+{
+  token: unary-operator
+  type: decrement
+}
+{
+  token: unary-operator
+  type: yakout
+}
+{
+  token: unary-operator
+  type: yakin
+}
+{
+  token: unary-operator
+  type: yakout-literal
+}
+{
+  token: unary-operator
+  type: yakup
+}`
+
+	checkMultiString(t, actual, expected)
+}
+
 func TestRdTypedAssignment(t *testing.T) {
 	p, err := parser.NewParserFactory().
 		Use(parser.RECURSIVE_DESCENT_STRATEGY).
@@ -137,7 +241,7 @@ func ensureValidProgram(t *testing.T, targetLength int, p parser.Parser, err err
 		t.Fatalf("Parse() returned nil")
 	}
 
-	if c := len(program.Statements); c != targetLength {
+	if c := len(program.Nodes); c != targetLength {
 		t.Fatalf("program.Statements does not have the correct number of statements. Have %d, want %d.", c, targetLength)
 	}
 

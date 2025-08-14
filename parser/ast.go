@@ -26,7 +26,7 @@ type RecStringer interface {
 }
 
 type Program struct {
-	Statements []Statement
+	Nodes []Node
 }
 
 // Represents an assignment operation with its identifier
@@ -90,21 +90,68 @@ type Identifier struct {
 	TypeSet TypeDeclaration
 }
 
+type Operator interface {
+	isOperator()
+}
+
+type BinaryOperatorType string
+
+const (
+	ADD_OPERATOR         BinaryOperatorType = "add"
+	SUBTRACT_OPERATOR    BinaryOperatorType = "subtract"
+	MULTIPLY_OPERATOR    BinaryOperatorType = "multiply"
+	DIVIDE_OPERATOR      BinaryOperatorType = "divide"
+	MODULO_OPERATOR      BinaryOperatorType = "mod"
+	LT_OPERATOR          BinaryOperatorType = "less-than"
+	GT_OPERATOR          BinaryOperatorType = "greater-than"
+	LTE_OPERATOR         BinaryOperatorType = "less-than-or-equal"
+	GTE_OPERATOR         BinaryOperatorType = "greater-than-or-equal"
+	EQUAL_OPERATOR       BinaryOperatorType = "equal"
+	SWAP_OPERATOR        BinaryOperatorType = "swap"
+	BINARY_OR_OPERATOR   BinaryOperatorType = "binary-or"
+	BINARY_AND_OPERATOR  BinaryOperatorType = "binary-and"
+	BINARY_XOR_OPERATOR  BinaryOperatorType = "binary-xor"
+	LEFT_SHIFT_OPERATOR  BinaryOperatorType = "left-shift"
+	RIGHT_SHIFT_OPERATOR BinaryOperatorType = "right-shift"
+)
+
+type BinaryOperator struct {
+	Token lexer.Token
+	Type  BinaryOperatorType
+}
+
+type UnaryOperatorType string
+
+const (
+	DUPLICATE_OPERATOR      UnaryOperatorType = "duplicate"
+	INCREMENT_OPERATOR      UnaryOperatorType = "increment"
+	DECREMENT_OPERATOR      UnaryOperatorType = "decrement"
+	YAKOUT_OPERATOR         UnaryOperatorType = "yakout"
+	YAKIN_OPERATOR          UnaryOperatorType = "yakin"
+	YAKOUT_LITERAL_OPERATOR UnaryOperatorType = "yakout-literal"
+	YAKUP_OPERATOR          UnaryOperatorType = "yakup"
+)
+
+type UnaryOperator struct {
+	Token lexer.Token
+	Type  UnaryOperatorType
+}
+
 // ---------------------------------------------------------
 // Program Implementation
 // ---------------------------------------------------------
 func (p *Program) TokenLiteral() string {
-	if len(p.Statements) > 0 {
-		return p.Statements[0].TokenLiteral()
+	if len(p.Nodes) > 0 {
+		return p.Nodes[0].TokenLiteral()
 	} else {
 		return ""
 	}
 }
 
 func (p Program) String() (o string) {
-	for i, s := range p.Statements {
+	for i, s := range p.Nodes {
 		o += s.String(0)
-		if i < (len(p.Statements) - 1) {
+		if i < (len(p.Nodes) - 1) {
 			o += "\n"
 		}
 	}
@@ -240,5 +287,44 @@ func NewLiteral(i lexer.Token, t LiteralType) *Literal {
 		Token: i,
 		Type:  t,
 		Value: i.Literal,
+	}
+}
+
+// ---------------------------------------------------------
+// Operators Implementation
+// ---------------------------------------------------------
+func (BinaryOperator) expressionNode()        {}
+func (BinaryOperator) isOperator()            {}
+func (o BinaryOperator) TokenLiteral() string { return o.Token.Literal }
+func (o BinaryOperator) String(nestLevel int) string {
+	return nestedLines([]string{
+		"{",
+		"  token: binary-operator",
+		fmt.Sprintf("  type: %s", o.Type),
+		"}",
+	}, nestLevel)
+}
+func NewBinaryOperator(i lexer.Token, t BinaryOperatorType) *BinaryOperator {
+	return &BinaryOperator{
+		Token: i,
+		Type:  t,
+	}
+}
+
+func (UnaryOperator) expressionNode()        {}
+func (UnaryOperator) isOperator()            {}
+func (o UnaryOperator) TokenLiteral() string { return o.Token.Literal }
+func (o UnaryOperator) String(nestLevel int) string {
+	return nestedLines([]string{
+		"{",
+		"  token: unary-operator",
+		fmt.Sprintf("  type: %s", o.Type),
+		"}",
+	}, nestLevel)
+}
+func NewUnaryOperator(i lexer.Token, t UnaryOperatorType) *UnaryOperator {
+	return &UnaryOperator{
+		Token: i,
+		Type:  t,
 	}
 }
