@@ -88,8 +88,8 @@ func (p *RdParser) parseBlock(nestLevel int) *Block {
 
 	for {
 		switch {
-		case p.expectCurrent(lexer.IF):
-			conditional := p.parseConditional(nestLevel + 1)
+		case p.expectCurrent(lexer.IF) || p.expectCurrent(lexer.NOT):
+			conditional := p.parseConditional(nestLevel+1, p.expectCurrent(lexer.NOT))
 			block.Statements = append(block.Statements, conditional)
 			block.Expressions = append(block.Expressions, ExecuteConditionalExpression{
 				ConditionalId: conditional.Id,
@@ -168,6 +168,7 @@ func (e ExecuteBlockExpression) String() string {
 
 type ConditionalStatement struct {
 	nestLevel int
+	inverted  bool
 	Id        int
 	WhenTrue  *Block
 	WhenFalse *Block
@@ -175,25 +176,40 @@ type ConditionalStatement struct {
 
 func (ConditionalStatement) isStatement() {}
 
-func (p *RdParser) parseConditional(nestLevel int) (c ConditionalStatement) {
+func (p *RdParser) parseConditional(nestLevel int, inverted bool) (c ConditionalStatement) {
 	c.nestLevel = nestLevel
+	c.inverted = inverted
 	c.Id = p.conditionalId
 	p.conditionalId++
 
 	if !p.expectPeek(lexer.LBRACE) {
+		// TODO: Add this to error handler
 		panic("Expected { after if statement.")
 	}
 
 	p.nextToken()
 	c.WhenTrue = p.parseBlock(nestLevel + 1)
 
-	c.WhenFalse = &Block{
-		id:          2,
-		nestLevel:   nestLevel + 1,
-		Statements:  []Statement{},
-		Expressions: []Expression{},
+	if !p.expectPeek(lexer.ELSE) {
+		c.WhenFalse = &Block{
+			id:          p.blockId,
+			nestLevel:   nestLevel + 1,
+			Statements:  []Statement{},
+			Expressions: []Expression{},
+		}
+		p.blockId++
+		return
 	}
 
+	p.nextToken()
+
+	if !p.expectPeek(lexer.LBRACE) {
+		// TODO: Add this to error handler
+		panic("Expected { after else statement")
+	}
+
+	p.nextToken()
+	c.WhenFalse = p.parseBlock(nestLevel + 1)
 	return
 }
 
@@ -211,8 +227,14 @@ func (c ConditionalStatement) String() string {
 		whenFalseStr = c.WhenFalse.String()
 	}
 
+	invertedStr := ""
+	if c.inverted {
+		invertedStr = bodyIndent + "inverted: true\n"
+	}
+
 	return indent + "conditional (\n" +
 		bodyIndent + "id: " + fmt.Sprint(c.Id) + "\n" +
+		invertedStr +
 		bodyIndent + "when-true:\n" +
 		whenTrueStr + "\n" +
 		bodyIndent + "when-false:\n" +

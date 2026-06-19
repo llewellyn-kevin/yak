@@ -101,8 +101,12 @@ func (p *RdParser) parseExpression() Expression {
 		return p.parseLeftShift()
 	case p.expectCurrent(lexer.RSHIFT):
 		return p.parseRightShift()
+	case p.expectCurrent(lexer.ASSIGN):
+		return p.parseAssignment()
 	case p.expectCurrent(lexer.IDENT):
 		return p.parseIdent()
+	case p.expectCurrent(lexer.YAKOUT):
+		return p.parseYakout()
 	default:
 		return nil
 	}

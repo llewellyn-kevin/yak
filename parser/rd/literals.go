@@ -124,3 +124,32 @@ func (p *RdParser) parseIdent() Expression {
 		Value: p.currentToken.Literal,
 	}
 }
+
+type AssignmentExpression struct {
+	Tokens     []lexer.Token
+	Identifier string
+}
+
+func (AssignmentExpression) isExpression() {}
+
+func (a AssignmentExpression) String() string {
+	return "assign " + a.Identifier
+}
+
+func (p *RdParser) parseAssignment() Expression {
+	assignmentToken := p.currentToken
+	p.nextToken()
+
+	if !p.expectCurrent(lexer.IDENT) {
+		// TODO: Add to more robust error handler
+		panic("Expected identifier after assignment operator")
+	}
+
+	return AssignmentExpression{
+		Tokens: []lexer.Token{
+			assignmentToken,
+			p.currentToken,
+		},
+		Identifier: p.currentToken.Literal,
+	}
+}

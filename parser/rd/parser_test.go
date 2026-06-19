@@ -122,7 +122,8 @@ func TestParsingNamedScopeBlocks(t *testing.T) {
     { myForScope for: + }
     { myForScopeWithoutColon for + }
     { notAScope + }
-    { for + }`
+    { for + }
+    { each - }`
 	expected := `block (
     id: 0
     statements: [
@@ -181,6 +182,15 @@ func TestParsingNamedScopeBlocks(t *testing.T) {
                 +
             ]
         )
+        block (
+            id: 7
+            loop: true
+            statements: [
+            ]
+            expressions: [
+                -
+            ]
+        )
     ]
     expressions: [
         execute-block 1
@@ -189,6 +199,7 @@ func TestParsingNamedScopeBlocks(t *testing.T) {
         execute-block 4
         execute-block 5
         execute-block 6
+        execute-block 7
     ]
 )`
 	testParserOutput(t, program, expected)
@@ -225,6 +236,107 @@ func TestParsingBasicIfStatement(t *testing.T) {
     ]
 )`
 	testParserOutput(t, program, expected)
+}
+
+func TestParsingIfElseStatement(t *testing.T) {
+	program := `3 4 if { 1 + } else { 2 - } *`
+	expected := `block (
+    id: 0
+    statements: [
+        conditional (
+            id: 0
+            when-true:
+                block (
+                    id: 1
+                    statements: [
+                    ]
+                    expressions: [
+                        1
+                        +
+                    ]
+                )
+            when-false:
+                block (
+                    id: 2
+                    statements: [
+                    ]
+                    expressions: [
+                        2
+                        -
+                    ]
+                )
+        )
+    ]
+    expressions: [
+        3
+        4
+        execute-conditional 0
+        *
+    ]
+)`
+	testParserOutput(t, program, expected)
+}
+
+func TestParsingNotStatement(t *testing.T) {
+
+	program := `not { 1 }`
+	expected := `block (
+    id: 0
+    statements: [
+        conditional (
+            id: 0
+            inverted: true
+            when-true:
+                block (
+                    id: 1
+                    statements: [
+                    ]
+                    expressions: [
+                        1
+                    ]
+                )
+            when-false:
+                block (
+                    id: 2
+                    statements: [
+                    ]
+                    expressions: [
+                    ]
+                )
+        )
+    ]
+    expressions: [
+        execute-conditional 0
+    ]
+)`
+	testParserOutput(t, program, expected)
+}
+
+func TestParsingAssignment(t *testing.T) {
+	program := `42->foo`
+	expected := `block (
+    id: 0
+    statements: [
+    ]
+    expressions: [
+        42
+        assign foo
+    ]
+)`
+	testParserOutput(t, program, expected)
+}
+
+func TestStio(t *testing.T) {
+	program := `yakout`
+	expected := `block (
+    id: 0
+    statements: [
+    ]
+    expressions: [
+        yakout
+    ]
+)`
+    testParserOutput(t, program, expected)
 }
 
 func getParser(reader *strings.Reader) *rd.RdParser {

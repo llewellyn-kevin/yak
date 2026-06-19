@@ -32,7 +32,7 @@ const (
 	MULT = "MULT"
 	DIV  = "DIV"
 	MOD  = "MOD"
-    EXP  = "EXP"
+	EXP  = "EXP"
 	LT   = "LT"
 	GT   = "GT"
 	LTEQ = "LTEQ"
@@ -84,7 +84,7 @@ const (
 	GET     = "GET"     // Not yet in parser
 
 	YAKOUT         = "YAKOUT"
-	YAKIN          = "YAKIN"
-	LITERAL_YAKOUT = "LITERAL_YAKOUT"
-	YAKUP          = "YAKUP"
+	YAKIN          = "YAKIN"          // Not yet in parser
+	LITERAL_YAKOUT = "LITERAL_YAKOUT" // Not yet in parser
+	YAKUP          = "YAKUP"          // Not yet in parser
 )
