@@ -27,6 +27,7 @@ var Keywords = map[string]TokenType{
 	"not":     NOT,
 	"else":    ELSE,
 	"for":     FOR,
+	"each":    FOR,
 	"bool":    KBOOL,
 	"int":     KINT,
 	"float":   KFLOAT,

@@ -17,7 +17,8 @@ func TestRdAssignment(t *testing.T) {
 
 	expected := `{
   token: assignment
-  identifier: {
+  identifier: 
+  {
     token: identifier
     value: foo
     type: any
@@ -25,7 +26,8 @@ func TestRdAssignment(t *testing.T) {
 }
 {
   token: assignment
-  identifier: {
+  identifier:
+  {
     token: identifier
     value: bar
     type: any
@@ -33,7 +35,8 @@ func TestRdAssignment(t *testing.T) {
 }
 {
   token: assignment
-  identifier: {
+  identifier:
+  {
     token: identifier
     value: three
     type: any
@@ -41,7 +44,8 @@ func TestRdAssignment(t *testing.T) {
 }
 {
   token: assignment
-  identifier: {
+  identifier:
+  {
     token: identifier
     value: four
     type: any
@@ -191,6 +195,105 @@ func TestRdOperands(t *testing.T) {
 	checkMultiString(t, actual, expected)
 }
 
+func TestRdConditional(t *testing.T) {
+	p, err := parser.NewParserFactory().
+		Use(parser.RECURSIVE_DESCENT_STRATEGY).
+		Get(lexer.NewLexer(strings.NewReader(`
+1 . -> foo =
+if {
+    3
+    if {
+      2 +
+    }
+} else {
+    1
+    +
+}
+not {
+    3
+}
+`)))
+	program := ensureValidProgram(t, 6, p, err)
+	actual := program.String()
+
+	expected := `{
+  token: literal
+  type: integer-literal
+  value: 1
+}
+{
+  token: unary-operator
+  type: duplicate
+}
+{
+  token: assignment
+  identifier: 
+  {
+    token: identifier
+    value: foo
+    type: any
+  }
+}
+{
+  token: binary-operator
+  type: equal
+}
+{
+  token: conditional-expression
+  type: if
+  consequence: [
+    {
+      token: literal
+      type: integer-literal
+      value: 3
+    }
+    {
+      token: conditional-expression
+      type: if
+      consequence: [
+        {
+          token: literal
+          type: integer-literal
+          value: 2
+        }
+        {
+          token: binary-operator
+          type: add
+        }
+      ]
+      alternative: [
+      ]
+    }
+  ]
+  alternative: [
+    {
+      token: literal
+      type: integer-literal
+      value: 1
+    }
+    {
+      token: binary-operator
+      type: add
+    }
+  ]
+}
+{
+  token: conditional-expression
+  type: not
+  consequence: [
+    {
+      token: literal
+      type: integer-literal
+      value: 3
+    }
+  ]
+  alternative: [
+  ]
+}`
+
+	checkMultiString(t, actual, expected)
+}
+
 func TestRdTypedAssignment(t *testing.T) {
 	p, err := parser.NewParserFactory().
 		Use(parser.RECURSIVE_DESCENT_STRATEGY).
@@ -205,10 +308,12 @@ func TestRdTypedAssignment(t *testing.T) {
 }
 {
   token: assignment
-  identifier: {
+  identifier:
+  {
     token: identifier
     value: nums
-    type: {
+    type:
+    {
       token: type-declaration
       types: [
         {

@@ -26,7 +26,8 @@ func TestRecursiveStrings(t *testing.T) {
 
 	expected := `{
   token: assignment
-  identifier: {
+  identifier:
+  {
     token: identifier
     value: foo
     type: any

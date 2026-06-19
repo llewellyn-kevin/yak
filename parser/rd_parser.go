@@ -94,6 +94,10 @@ func (p *rdParser) parseStatement() Node {
 		return p.parseUnaryOperand(YAKOUT_LITERAL_OPERATOR)
 	case p.expectCurrent(lexer.YAKUP):
 		return p.parseUnaryOperand(YAKUP_OPERATOR)
+	case p.expectCurrent(lexer.IF):
+		return p.parseConditional(IF_CONDITION)
+	case p.expectCurrent(lexer.NOT):
+		return p.parseConditional(NOT_CONDITION)
 	default:
 		return nil
 	}
@@ -130,7 +134,7 @@ func (p *rdParser) parseTypeList(typeDeclaration *TypeDeclaration) error {
 	return nil
 }
 
-func (p *rdParser) parseAssignStatement() Statement {
+func (p *rdParser) parseAssignStatement() nestedStatement {
 	if !p.expectPeek(lexer.IDENT) {
 		return nil // should error out?
 	}
@@ -148,16 +152,82 @@ func (p *rdParser) parseAssignStatement() Statement {
 	return NewAssignment(assign, ident, typeDef)
 }
 
-func (p *rdParser) parseLiteral(ty LiteralType) Statement {
+func (p *rdParser) parseLiteral(ty LiteralType) nestedStatement {
 	return NewLiteral(p.currentToken, ty)
 }
 
-func (p *rdParser) parseBinaryOperand(o BinaryOperatorType) Expression {
+func (p *rdParser) parseBinaryOperand(o BinaryOperatorType) nestedExpression {
 	return NewBinaryOperator(p.currentToken, o)
 }
 
-func (p *rdParser) parseUnaryOperand(o UnaryOperatorType) Expression {
+func (p *rdParser) parseUnaryOperand(o UnaryOperatorType) nestedExpression {
 	return NewUnaryOperator(p.currentToken, o)
+}
+
+func (p *rdParser) parseConditional(ty ValidConditionalType) nestedExpression {
+	to := p.currentToken
+	consequence := &BlockStatement{}
+	alternative := &BlockStatement{}
+
+	if !p.expectPeek(lexer.LBRACE) {
+		// TODO: Add error
+		return NewConditionalExpression(to, ty, consequence, alternative)
+	}
+	p.nextToken()
+	p.nextToken()
+
+	p.parseBlock(consequence)
+
+	if p.expectPeek(lexer.ELSE) {
+		p.nextToken()
+		if !p.expectPeek(lexer.LBRACE) {
+			// TODO: Add error
+			return NewConditionalExpression(to, ty, consequence, alternative)
+		}
+		p.nextToken()
+
+		p.parseBlock(alternative)
+	}
+
+	return NewConditionalExpression(to, ty, consequence, alternative)
+}
+
+type nestedStatement interface {
+	Statement
+	NestableNode
+}
+
+type nestedExpression interface {
+	Expression
+	NestableNode
+}
+
+func (p *rdParser) parseBlock(nestedNodes *BlockStatement) {
+	switch true {
+	case p.expectCurrent(lexer.EOF):
+		// TODO: Add error
+		return
+	case p.expectCurrent(lexer.RBRACE):
+		return
+	default:
+		switch true {
+		case p.expectCurrent(lexer.ASSIGN):
+			nestedNodes.Nodes = append(nestedNodes.Nodes, p.parseAssignStatement())
+		case p.expectCurrent(lexer.INT):
+			nestedNodes.Nodes = append(nestedNodes.Nodes, p.parseLiteral(INT_LITERAL))
+		case p.expectCurrent(lexer.ADD):
+			nestedNodes.Nodes = append(nestedNodes.Nodes, p.parseBinaryOperand(ADD_OPERATOR))
+		case p.expectCurrent(lexer.IF):
+			nestedNodes.Nodes = append(nestedNodes.Nodes, p.parseConditional(IF_CONDITION))
+		case p.expectCurrent(lexer.NOT):
+			nestedNodes.Nodes = append(nestedNodes.Nodes, p.parseConditional(NOT_CONDITION))
+		default:
+			// TODO: Add error
+		}
+	}
+
+	p.nextToken()
+	p.parseBlock(nestedNodes)
 }
 
 func (p rdParser) expectCurrent(t lexer.TokenType) bool {

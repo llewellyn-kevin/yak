@@ -29,6 +29,10 @@ type Program struct {
 	Nodes []Node
 }
 
+type NProgram struct {
+    Statements []Statement
+}
+
 // Represents an assignment operation with its identifier
 type Assignment struct {
 	Token      lexer.Token
@@ -137,6 +141,29 @@ type UnaryOperator struct {
 	Type  UnaryOperatorType
 }
 
+type NestableNode interface {
+	Node
+	isNestableNode()
+}
+
+type BlockStatement struct {
+	Nodes []NestableNode
+}
+
+type ValidConditionalType string
+
+const (
+	IF_CONDITION  ValidConditionalType = "if"
+	NOT_CONDITION ValidConditionalType = "not"
+)
+
+type ConditionalExpression struct {
+	Token       lexer.Token
+	Type        ValidConditionalType
+	Consequence *BlockStatement
+	Alternative *BlockStatement
+}
+
 // ---------------------------------------------------------
 // Program Implementation
 // ---------------------------------------------------------
@@ -164,11 +191,7 @@ func (p Program) String() (o string) {
 func nestedLines(lines []string, nestLevel int) (o string) {
 	padding := strings.Repeat("  ", nestLevel)
 	for i, l := range lines {
-		if i == 0 {
-			o += fmt.Sprintf("%s", l)
-		} else {
-			o += fmt.Sprintf("%s%s", padding, l)
-		}
+		o += fmt.Sprintf("%d%s%s", nestLevel, padding, l)
 		if i != (len(lines) - 1) {
 			o += "\n"
 		}
@@ -180,12 +203,13 @@ func nestedLines(lines []string, nestLevel int) (o string) {
 // Assignment Implementation
 // ---------------------------------------------------------
 func (Assignment) statementNode()         {}
+func (Assignment) isNestableNode()        {}
 func (a Assignment) TokenLiteral() string { return a.Token.Literal }
 func (a Assignment) String(nestLevel int) string {
 	return nestedLines([]string{
 		"{",
 		"  token: assignment",
-		fmt.Sprintf("  identifier: %s", a.Identifier.String(nestLevel+1)),
+		fmt.Sprintf("  identifier:\n%s", a.Identifier.String(nestLevel+1)),
 		"}",
 	}, nestLevel)
 }
@@ -200,6 +224,7 @@ func NewAssignment(a lexer.Token, i lexer.Token, typeDef *TypeDeclaration) *Assi
 // Types Implementation
 // ---------------------------------------------------------
 func (TypeDeclaration) expressionNode()        {}
+func (TypeDeclaration) isNestableNode()        {}
 func (t TypeDeclaration) TokenLiteral() string { return t.Token.Literal }
 func (t TypeDeclaration) String(nestLevel int) string {
 	var typeList []string
@@ -219,9 +244,8 @@ func (KeywordType) expressionNode()        {}
 func (KeywordType) isTypeExpression()      {}
 func (t KeywordType) TokenLiteral() string { return t.Token.Literal }
 func (t KeywordType) String(nestLevel int) string {
-	padding := strings.Repeat("  ", nestLevel-2)
 	return nestedLines([]string{
-		fmt.Sprintf("%s{", padding),
+		"{",
 		"  token: keyword-type",
 		fmt.Sprintf("  value: %s", t.Value),
 		"}",
@@ -231,9 +255,8 @@ func (SymbolicType) expressionNode()        {}
 func (SymbolicType) isTypeExpression()      {}
 func (t SymbolicType) TokenLiteral() string { return t.Token.Literal }
 func (t SymbolicType) String(nestLevel int) string {
-	padding := strings.Repeat("  ", nestLevel-2)
 	return nestedLines([]string{
-		fmt.Sprintf("%s{", padding),
+		"{",
 		"  token: symbolic-type",
 		fmt.Sprintf("  value: %s", t.Value),
 		"}",
@@ -244,19 +267,20 @@ func (t SymbolicType) String(nestLevel int) string {
 // Identifier Implementation
 // ---------------------------------------------------------
 func (Identifier) statementNode()         {}
+func (Identifier) isNestableNode()        {}
 func (i Identifier) TokenLiteral() string { return i.Token.Literal }
 func (i Identifier) String(nestLevel int) string {
 	var types string
 	if len(i.TypeSet.Types) == 0 {
-		types = "any"
+		types = " any"
 	} else {
-		types = i.TypeSet.String(nestLevel + 1)
+		types = fmt.Sprintf("\n%s", i.TypeSet.String(nestLevel+1))
 	}
 	return nestedLines([]string{
 		"{",
 		"  token: identifier",
 		fmt.Sprintf("  value: %s", i.Value),
-		fmt.Sprintf("  type: %s", types),
+		fmt.Sprintf("  type:%s", types),
 		"}",
 	}, nestLevel)
 }
@@ -272,6 +296,7 @@ func NewIdentifier(i lexer.Token, typeDef *TypeDeclaration) *Identifier {
 // Literal Implementation
 // ---------------------------------------------------------
 func (Literal) statementNode()         {}
+func (Literal) isNestableNode()        {}
 func (i Literal) TokenLiteral() string { return i.Token.Literal }
 func (i Literal) String(nestLevel int) string {
 	return nestedLines([]string{
@@ -295,6 +320,7 @@ func NewLiteral(i lexer.Token, t LiteralType) *Literal {
 // ---------------------------------------------------------
 func (BinaryOperator) expressionNode()        {}
 func (BinaryOperator) isOperator()            {}
+func (BinaryOperator) isNestableNode()        {}
 func (o BinaryOperator) TokenLiteral() string { return o.Token.Literal }
 func (o BinaryOperator) String(nestLevel int) string {
 	return nestedLines([]string{
@@ -313,6 +339,7 @@ func NewBinaryOperator(i lexer.Token, t BinaryOperatorType) *BinaryOperator {
 
 func (UnaryOperator) expressionNode()        {}
 func (UnaryOperator) isOperator()            {}
+func (UnaryOperator) isNestableNode()        {}
 func (o UnaryOperator) TokenLiteral() string { return o.Token.Literal }
 func (o UnaryOperator) String(nestLevel int) string {
 	return nestedLines([]string{
@@ -326,5 +353,56 @@ func NewUnaryOperator(i lexer.Token, t UnaryOperatorType) *UnaryOperator {
 	return &UnaryOperator{
 		Token: i,
 		Type:  t,
+	}
+}
+
+// ---------------------------------------------------------
+// Conditional Implementation
+// ---------------------------------------------------------
+func (ConditionalExpression) expressionNode()        {}
+func (ConditionalExpression) isOperator()            {}
+func (ConditionalExpression) isNestableNode()        {}
+func (c ConditionalExpression) TokenLiteral() string { return c.Token.Literal }
+func (c ConditionalExpression) String(nestLevel int) string {
+	var consequenceNodes []string
+	var alternativeNodes []string
+	for _, n := range c.Consequence.Nodes {
+		consequenceNodes = append(consequenceNodes, n.String(nestLevel+2))
+	}
+	for _, n := range c.Alternative.Nodes {
+		alternativeNodes = append(alternativeNodes, n.String(nestLevel+2))
+	}
+	return nestedLines(
+		append(
+			append(
+				append(
+					[]string{
+						"{",
+						"  token: conditional-expression",
+						fmt.Sprintf("  type: %s", c.Type),
+						"  consequence: [",
+					},
+					consequenceNodes...,
+				),
+				[]string{
+					"  ] ",
+					"  alternative: [",
+				}...,
+			),
+			append(
+				alternativeNodes,
+				[]string{
+					"  ]",
+					"}",
+				}...,
+			)...,
+		), nestLevel)
+}
+func NewConditionalExpression(to lexer.Token, ty ValidConditionalType, consequence *BlockStatement, alternative *BlockStatement) *ConditionalExpression {
+	return &ConditionalExpression{
+		Token:       to,
+		Type:        ty,
+		Consequence: consequence,
+		Alternative: alternative,
 	}
 }
