@@ -89,6 +89,24 @@ func (p *RdParser) parseSymbol() Expression {
 	}
 }
 
+type BoolLiteral struct {
+	Token lexer.Token
+	Value bool
+}
+
+func (BoolLiteral) isExpression() {}
+
+func (b BoolLiteral) String() string {
+	return strconv.FormatBool(b.Value)
+}
+
+func (p *RdParser) parseBool(value bool) Expression {
+	return BoolLiteral{
+		Token: p.currentToken,
+		Value: value,
+	}
+}
+
 type IdentifierExpression struct {
 	Token lexer.Token
 	Value string

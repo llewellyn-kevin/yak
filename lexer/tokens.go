@@ -32,6 +32,7 @@ const (
 	MULT = "MULT"
 	DIV  = "DIV"
 	MOD  = "MOD"
+    EXP  = "EXP"
 	LT   = "LT"
 	GT   = "GT"
 	LTEQ = "LTEQ"

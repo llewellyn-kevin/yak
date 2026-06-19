@@ -88,6 +88,12 @@ func (p *RdParser) parseBlock(nestLevel int) *Block {
 
 	for {
 		switch {
+		case p.expectCurrent(lexer.IF):
+			conditional := p.parseConditional(nestLevel + 1)
+			block.Statements = append(block.Statements, conditional)
+			block.Expressions = append(block.Expressions, ExecuteConditionalExpression{
+				ConditionalId: conditional.Id,
+			})
 		case p.expectCurrent(lexer.LBRACE):
 			nestedBlock := p.parseBlock(nestLevel + 1)
 			block.Statements = append(block.Statements, nestedBlock)
@@ -158,4 +164,68 @@ func (ExecuteBlockExpression) isExpression() {}
 
 func (e ExecuteBlockExpression) String() string {
 	return "execute-block " + fmt.Sprint(e.BlockId)
+}
+
+type ConditionalStatement struct {
+	nestLevel int
+	Id        int
+	WhenTrue  *Block
+	WhenFalse *Block
+}
+
+func (ConditionalStatement) isStatement() {}
+
+func (p *RdParser) parseConditional(nestLevel int) (c ConditionalStatement) {
+	c.nestLevel = nestLevel
+	c.Id = p.conditionalId
+	p.conditionalId++
+
+	if !p.expectPeek(lexer.LBRACE) {
+		panic("Expected { after if statement.")
+	}
+
+	p.nextToken()
+	c.WhenTrue = p.parseBlock(nestLevel + 1)
+
+	c.WhenFalse = &Block{
+		id:          2,
+		nestLevel:   nestLevel + 1,
+		Statements:  []Statement{},
+		Expressions: []Expression{},
+	}
+
+	return
+}
+
+func (c ConditionalStatement) String() string {
+	indent := strings.Repeat("\t", c.nestLevel*2)
+	bodyIndent := strings.Repeat("\t", c.nestLevel*2+1)
+
+	whenTrueStr := ""
+	if c.WhenTrue != nil {
+		whenTrueStr = c.WhenTrue.String()
+	}
+
+	whenFalseStr := ""
+	if c.WhenFalse != nil {
+		whenFalseStr = c.WhenFalse.String()
+	}
+
+	return indent + "conditional (\n" +
+		bodyIndent + "id: " + fmt.Sprint(c.Id) + "\n" +
+		bodyIndent + "when-true:\n" +
+		whenTrueStr + "\n" +
+		bodyIndent + "when-false:\n" +
+		whenFalseStr + "\n" +
+		indent + ")"
+}
+
+type ExecuteConditionalExpression struct {
+	ConditionalId int
+}
+
+func (ExecuteConditionalExpression) isExpression() {}
+
+func (e ExecuteConditionalExpression) String() string {
+	return "execute-conditional " + fmt.Sprint(e.ConditionalId)
 }

@@ -79,7 +79,7 @@ func TestParsingNestedBlocks(t *testing.T) {
 }
 
 func TestParsingExpressions(t *testing.T) {
-	program := `1 4.2 %sym + - * / ident`
+	program := `1 4.2 %sym true false + - * / % ** < > <= >= = <> | & ^ . ++ -- << >> ident`
 	expected := `block (
     id: 0
     statements: [
@@ -88,10 +88,28 @@ func TestParsingExpressions(t *testing.T) {
         1
         4.2
         %sym
+        true
+        false
         +
         -
         *
         /
+        %
+        **
+        <
+        >
+        <=
+        >=
+        =
+        <>
+        |
+        &
+        ^
+        .
+        ++
+        --
+        <<
+        >>
         ident
     ]
 )`
@@ -171,6 +189,39 @@ func TestParsingNamedScopeBlocks(t *testing.T) {
         execute-block 4
         execute-block 5
         execute-block 6
+    ]
+)`
+	testParserOutput(t, program, expected)
+}
+
+func TestParsingBasicIfStatement(t *testing.T) {
+	program := `if { + }`
+	expected := `block (
+    id: 0
+    statements: [
+        conditional (
+            id: 0
+            when-true:
+                block (
+                    id: 1
+                    statements: [
+                    ]
+                    expressions: [
+                        +
+                    ]
+                )
+            when-false:
+                block (
+                    id: 2
+                    statements: [
+                    ]
+                    expressions: [
+                    ]
+                )
+        )
+    ]
+    expressions: [
+        execute-conditional 0
     ]
 )`
 	testParserOutput(t, program, expected)

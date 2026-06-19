@@ -10,10 +10,11 @@ import (
 // --------------------------------------------------
 
 type RdParser struct {
-	l            *lexer.Lexer
-	currentToken lexer.Token
-	peekToken    lexer.Token
-	blockId      int
+	l             *lexer.Lexer
+	currentToken  lexer.Token
+	peekToken     lexer.Token
+	blockId       int
+	conditionalId int
 }
 
 func (RdParser) Strategy() parser.ParsingStrategy { return parser.RECURSIVE_DESCENT_STRATEGY }
@@ -56,6 +57,10 @@ func (p *RdParser) parseExpression() Expression {
 		return p.parseString()
 	case p.expectCurrent(lexer.SYMBOL):
 		return p.parseSymbol()
+	case p.expectCurrent(lexer.TRUE):
+		return p.parseBool(true)
+	case p.expectCurrent(lexer.FALSE):
+		return p.parseBool(false)
 	case p.expectCurrent(lexer.ADD):
 		return p.parseAdd()
 	case p.expectCurrent(lexer.SUB):
@@ -64,6 +69,38 @@ func (p *RdParser) parseExpression() Expression {
 		return p.parseMultiply()
 	case p.expectCurrent(lexer.DIV):
 		return p.parseDivide()
+	case p.expectCurrent(lexer.MOD):
+		return p.parseModulo()
+	case p.expectCurrent(lexer.EXP):
+		return p.parsePower()
+	case p.expectCurrent(lexer.LT):
+		return p.parseLessThan()
+	case p.expectCurrent(lexer.GT):
+		return p.parseGreaterThan()
+	case p.expectCurrent(lexer.LTEQ):
+		return p.parseLessThanEqualTo()
+	case p.expectCurrent(lexer.GTEQ):
+		return p.parseGreaterThanEqualTo()
+	case p.expectCurrent(lexer.EQ):
+		return p.parseEqualTo()
+	case p.expectCurrent(lexer.SWAP):
+		return p.parseSwap()
+	case p.expectCurrent(lexer.BOR):
+		return p.parseBor()
+	case p.expectCurrent(lexer.BAND):
+		return p.parseBand()
+	case p.expectCurrent(lexer.BXOR):
+		return p.parseXor()
+	case p.expectCurrent(lexer.DUP):
+		return p.parseDup()
+	case p.expectCurrent(lexer.INC):
+		return p.parseIncrement()
+	case p.expectCurrent(lexer.DEC):
+		return p.parseDecrement()
+	case p.expectCurrent(lexer.LSHIFT):
+		return p.parseLeftShift()
+	case p.expectCurrent(lexer.RSHIFT):
+		return p.parseRightShift()
 	case p.expectCurrent(lexer.IDENT):
 		return p.parseIdent()
 	default:

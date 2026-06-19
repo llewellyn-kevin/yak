@@ -19,13 +19,12 @@ func TestNextToken(t *testing.T) {
 }
 
 func TestSingleCharOps(t *testing.T) {
-	reader := strings.NewReader("+-*/%=&|^><")
+	reader := strings.NewReader("+-/%=&|^><")
 	lexer := NewLexer(reader)
 
 	expected := []Token{
 		{ADD, "+"},
 		{SUB, "-"},
-		{MULT, "*"},
 		{DIV, "/"},
 		{MOD, "%"},
 		{EQ, "="},
@@ -44,10 +43,11 @@ func TestSingleCharOps(t *testing.T) {
 }
 
 func TestDoubleCharOps(t *testing.T) {
-	reader := strings.NewReader("><++--+->-<<<>>><=>=..")
+	reader := strings.NewReader("*><++--+->-<<<>>><=>=..**")
 	lexer := NewLexer(reader)
 
 	expected := []Token{
+		{MULT, "*"},
 		{GT, ">"},
 		{LT, "<"},
 		{INC, "++"},
@@ -62,6 +62,7 @@ func TestDoubleCharOps(t *testing.T) {
 		{GTEQ, ">="},
 		{DUP, "."},
 		{DUP, "."},
+		{EXP, "**"},
 		{EOF, ""},
 	}
 
