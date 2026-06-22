@@ -2,8 +2,11 @@ package repl
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"llewellyn-kevin/yak/lexer"
+	"llewellyn-kevin/yak/parser"
+	"llewellyn-kevin/yak/parser/rd"
 	"strings"
 )
 
@@ -25,13 +28,13 @@ func Run(in io.Reader, p Printer) {
 			continue
 		}
 		l := lexer.NewLexer(strings.NewReader(line))
-		for t := l.NextToken(); t.Type != lexer.EOF; t = l.NextToken() {
-			if t.Type == lexer.ILLEGAL {
-				p.Println("Illegal token: " + t.Literal)
-				continue
-			}
-			p.Println(t.String())
+		p, err := parser.NewParserFactory().Use(rd.RECURSIVE_DESCENT_STRATEGY).Get(l)
+		if err != nil {
+			fmt.Println(err)
+			break
 		}
+		program := p.Parse()
+		fmt.Println(program)
 	}
 	p.Println("Goodbye!")
 }

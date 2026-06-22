@@ -2,22 +2,22 @@ package parser
 
 import (
 	"errors"
+	"llewellyn-kevin/yak/ast"
 	"llewellyn-kevin/yak/lexer"
+	"llewellyn-kevin/yak/parser/rd"
+	"slices"
 )
+
+type ParsingStrategy string
+
+var legalStrategies = []ParsingStrategy{
+	rd.RECURSIVE_DESCENT_STRATEGY,
+}
 
 type Parser interface {
 	Strategy() ParsingStrategy
-	Parse() *Program
+	Parse() *ast.Program
 }
-
-type ParsingStrategy uint8
-
-const (
-	RECURSIVE_DESCENT_STRATEGY = iota
-)
-
-var first ParsingStrategy = RECURSIVE_DESCENT_STRATEGY
-var last ParsingStrategy = RECURSIVE_DESCENT_STRATEGY
 
 type ParserFactory struct {
 	mode ParsingStrategy
@@ -25,27 +25,26 @@ type ParserFactory struct {
 }
 
 func NewParserFactory() *ParserFactory {
-	return &ParserFactory{RECURSIVE_DESCENT_STRATEGY, nil}
+	return &ParserFactory{rd.RECURSIVE_DESCENT_STRATEGY, nil}
 }
 
 func (p *ParserFactory) Use(s ParsingStrategy) *ParserFactory {
-	if s > last || s < first {
-		p.err = errors.New("")
-		return p
+	if ok := slices.Contains(legalStrategies, s); !ok {
+		p.err = errors.New("Could not find parsing strategy in atlas")
 	}
 	p.mode = s
 	return p
 }
 
-func (p ParserFactory) Get(l *lexer.Lexer) (Parser, error) {
+func (p ParserFactory) Get(l *lexer.Lexer) (*rd.RdParser, error) {
 	if p.err != nil {
-		return nil, p.err
+		return &rd.RdParser{}, p.err
 	}
 
 	switch p.mode {
-	case RECURSIVE_DESCENT_STRATEGY:
-		return newRdParser(l), nil
+	case rd.RECURSIVE_DESCENT_STRATEGY:
+		return rd.NewRdParser(l), nil
 	default:
-		return newRdParser(l), nil
+		return rd.NewRdParser(l), nil
 	}
 }

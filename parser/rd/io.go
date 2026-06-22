@@ -1,19 +1,11 @@
 package rd
 
-import "llewellyn-kevin/yak/lexer"
+import (
+	"llewellyn-kevin/yak/ast"
+)
 
-type YakoutExpression struct {
-	Token lexer.Token
-}
-
-func (YakoutExpression) isExpression() {}
-
-func (e YakoutExpression) String() string {
-	return "yakout"
-}
-
-func (p *RdParser) parseYakout() YakoutExpression {
-	return YakoutExpression{
+func (p *RdParser) parseYakout() ast.YakoutExpression {
+	return ast.YakoutExpression{
 		Token: p.currentToken,
 	}
 }

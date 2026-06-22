@@ -1,291 +1,113 @@
 package rd
 
-import "llewellyn-kevin/yak/lexer"
+import (
+	"llewellyn-kevin/yak/ast"
+)
 
-type AddExpression struct {
-	Token lexer.Token
-}
-
-func (AddExpression) isExpression() {}
-
-func (a AddExpression) String() string {
-	return "+"
-}
-
-func (p *RdParser) parseAdd() Expression {
-	return AddExpression{
+func (p *RdParser) parseAdd() ast.Expression {
+	return ast.AddExpression{
 		Token: p.currentToken,
 	}
 }
 
-type SubtractExpression struct {
-	Token lexer.Token
-}
-
-func (SubtractExpression) isExpression() {}
-
-func (s SubtractExpression) String() string {
-	return "-"
-}
-
-func (p *RdParser) parseSubtract() Expression {
-	return SubtractExpression{
+func (p *RdParser) parseSubtract() ast.Expression {
+	return ast.SubtractExpression{
 		Token: p.currentToken,
 	}
 }
 
-type MultiplyExpression struct {
-	Token lexer.Token
-}
-
-func (MultiplyExpression) isExpression() {}
-
-func (m MultiplyExpression) String() string {
-	return "*"
-}
-
-func (p *RdParser) parseMultiply() Expression {
-	return MultiplyExpression{
+func (p *RdParser) parseMultiply() ast.Expression {
+	return ast.MultiplyExpression{
 		Token: p.currentToken,
 	}
 }
 
-type DivideExpression struct {
-	Token lexer.Token
-}
-
-func (DivideExpression) isExpression() {}
-
-func (d DivideExpression) String() string {
-	return "/"
-}
-
-func (p *RdParser) parseDivide() Expression {
-	return DivideExpression{
+func (p *RdParser) parseDivide() ast.Expression {
+	return ast.DivideExpression{
 		Token: p.currentToken,
 	}
 }
 
-type ModuloExpression struct {
-	Token lexer.Token
-}
-
-func (ModuloExpression) isExpression() {}
-
-func (m ModuloExpression) String() string {
-	return "%"
-}
-
-func (p *RdParser) parseModulo() Expression {
-	return ModuloExpression{
+func (p *RdParser) parseModulo() ast.Expression {
+	return ast.ModuloExpression{
 		Token: p.currentToken,
 	}
 }
 
-type PowerExpression struct {
-	Token lexer.Token
-}
-
-func (PowerExpression) isExpression() {}
-
-func (p PowerExpression) String() string {
-	return "**"
-}
-
-func (p *RdParser) parsePower() Expression {
-	return PowerExpression{
+func (p *RdParser) parsePower() ast.Expression {
+	return ast.PowerExpression{
 		Token: p.currentToken,
 	}
 }
 
-type LessThanExpression struct {
-	Token lexer.Token
-}
-
-func (LessThanExpression) isExpression() {}
-
-func (l LessThanExpression) String() string {
-	return "<"
-}
-
-func (p *RdParser) parseLessThan() Expression {
-	return LessThanExpression{
+func (p *RdParser) parseLessThan() ast.Expression {
+	return ast.LessThanExpression{
 		Token: p.currentToken,
 	}
 }
 
-type GreaterThanExpression struct {
-	Token lexer.Token
-}
-
-func (GreaterThanExpression) isExpression() {}
-
-func (g GreaterThanExpression) String() string {
-	return ">"
-}
-
-func (p *RdParser) parseGreaterThan() Expression {
-	return GreaterThanExpression{
+func (p *RdParser) parseGreaterThan() ast.Expression {
+	return ast.GreaterThanExpression{
 		Token: p.currentToken,
 	}
 }
 
-type LessThanEqualToExpression struct {
-	Token lexer.Token
-}
-
-func (LessThanEqualToExpression) isExpression() {}
-
-func (l LessThanEqualToExpression) String() string {
-	return "<="
-}
-
-func (p *RdParser) parseLessThanEqualTo() Expression {
-	return LessThanEqualToExpression{
+func (p *RdParser) parseLessThanEqualTo() ast.Expression {
+	return ast.LessThanEqualToExpression{
 		Token: p.currentToken,
 	}
 }
 
-type GreaterThanEqualToExpression struct {
-	Token lexer.Token
-}
-
-func (GreaterThanEqualToExpression) isExpression() {}
-
-func (g GreaterThanEqualToExpression) String() string {
-	return ">="
-}
-
-func (p *RdParser) parseGreaterThanEqualTo() Expression {
-	return GreaterThanEqualToExpression{
+func (p *RdParser) parseGreaterThanEqualTo() ast.Expression {
+	return ast.GreaterThanEqualToExpression{
 		Token: p.currentToken,
 	}
 }
 
-type EqualToExpression struct {
-	Token lexer.Token
-}
-
-func (EqualToExpression) isExpression() {}
-
-func (e EqualToExpression) String() string {
-	return "="
-}
-
-func (p *RdParser) parseEqualTo() Expression {
-	return EqualToExpression{
+func (p *RdParser) parseEqualTo() ast.Expression {
+	return ast.EqualToExpression{
 		Token: p.currentToken,
 	}
 }
 
-type BorExpression struct {
-	Token lexer.Token
-}
-
-func (BorExpression) isExpression() {}
-
-func (b BorExpression) String() string {
-	return "|"
-}
-
-func (p *RdParser) parseBor() Expression {
-	return BorExpression{
+func (p *RdParser) parseBor() ast.Expression {
+	return ast.BorExpression{
 		Token: p.currentToken,
 	}
 }
 
-type BandExpression struct {
-	Token lexer.Token
-}
-
-func (BandExpression) isExpression() {}
-
-func (b BandExpression) String() string {
-	return "&"
-}
-
-func (p *RdParser) parseBand() Expression {
-	return BandExpression{
+func (p *RdParser) parseBand() ast.Expression {
+	return ast.BandExpression{
 		Token: p.currentToken,
 	}
 }
 
-type XorExpression struct {
-	Token lexer.Token
-}
-
-func (XorExpression) isExpression() {}
-
-func (x XorExpression) String() string {
-	return "^"
-}
-
-func (p *RdParser) parseXor() Expression {
-	return XorExpression{
+func (p *RdParser) parseXor() ast.Expression {
+	return ast.XorExpression{
 		Token: p.currentToken,
 	}
 }
 
-type IncrementExpression struct {
-	Token lexer.Token
-}
-
-func (IncrementExpression) isExpression() {}
-
-func (i IncrementExpression) String() string {
-	return "++"
-}
-
-func (p *RdParser) parseIncrement() Expression {
-	return IncrementExpression{
+func (p *RdParser) parseIncrement() ast.Expression {
+	return ast.IncrementExpression{
 		Token: p.currentToken,
 	}
 }
 
-type DecrementExpression struct {
-	Token lexer.Token
-}
-
-func (DecrementExpression) isExpression() {}
-
-func (d DecrementExpression) String() string {
-	return "--"
-}
-
-func (p *RdParser) parseDecrement() Expression {
-	return DecrementExpression{
+func (p *RdParser) parseDecrement() ast.Expression {
+	return ast.DecrementExpression{
 		Token: p.currentToken,
 	}
 }
 
-type LeftShiftExpression struct {
-	Token lexer.Token
-}
-
-func (LeftShiftExpression) isExpression() {}
-
-func (l LeftShiftExpression) String() string {
-	return "<<"
-}
-
-func (p *RdParser) parseLeftShift() Expression {
-	return LeftShiftExpression{
+func (p *RdParser) parseLeftShift() ast.Expression {
+	return ast.LeftShiftExpression{
 		Token: p.currentToken,
 	}
 }
 
-type RightShiftExpression struct {
-	Token lexer.Token
-}
-
-func (RightShiftExpression) isExpression() {}
-
-func (r RightShiftExpression) String() string {
-	return ">>"
-}
-
-func (p *RdParser) parseRightShift() Expression {
-	return RightShiftExpression{
+func (p *RdParser) parseRightShift() ast.Expression {
+	return ast.RightShiftExpression{
 		Token: p.currentToken,
 	}
 }

@@ -1,35 +1,17 @@
 package rd
 
-import "llewellyn-kevin/yak/lexer"
+import (
+	"llewellyn-kevin/yak/ast"
+)
 
-type SwapExpression struct {
-	Token lexer.Token
-}
-
-func (SwapExpression) isExpression() {}
-
-func (s SwapExpression) String() string {
-	return "<>"
-}
-
-func (p *RdParser) parseSwap() Expression {
-	return SwapExpression{
+func (p *RdParser) parseSwap() ast.Expression {
+	return ast.SwapExpression{
 		Token: p.currentToken,
 	}
 }
 
-type DupExpression struct {
-    Token lexer.Token
-}
-
-func (DupExpression) isExpression() {}
-
-func (d DupExpression) String() string {
-    return "."
-}
-
-func (p *RdParser) parseDup() Expression {
-    return DupExpression{
-        Token: p.currentToken,
-    }
+func (p *RdParser) parseDup() ast.Expression {
+	return ast.DupExpression{
+		Token: p.currentToken,
+	}
 }

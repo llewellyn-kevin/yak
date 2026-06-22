@@ -1,56 +1,18 @@
 package rd
 
 import (
-	"fmt"
+	"llewellyn-kevin/yak/ast"
 	"llewellyn-kevin/yak/lexer"
-	"strings"
 )
 
-type Program struct {
-	MainBlock *Block
-}
-
-func (p Program) String() string {
-	return p.MainBlock.String()
-}
-
-type Statement interface {
-	isStatement()
-	String() string
-}
-
-type Expression interface {
-	isExpression()
-	String() string
-}
-
-type Block struct {
-	id          int
-	nestLevel   int
-	Scope       string
-	IsLoop      bool
-	Statements  []Statement
-	Expressions []Expression
-}
-
-func (Block) isStatement() {}
-
-func (b Block) isRoot() bool {
-	return b.id == 0
-}
-
-func (b Block) isNamedScope() bool {
-	return b.Scope != ""
-}
-
-func (p *RdParser) parseBlock(nestLevel int) *Block {
-	block := &Block{
-		id:        p.blockId,
-		nestLevel: nestLevel,
+func (p *RdParser) parseBlock(nestLevel int) *ast.Block {
+	block := &ast.Block{
+		Id:        p.blockId,
+		NestLevel: nestLevel,
 	}
 	p.blockId++
 
-	if !block.isRoot() {
+	if !block.IsRoot() {
 		// Check if block has a named scope
 		if p.expectPeek(lexer.IDENT) {
 			p.nextToken()
@@ -91,14 +53,14 @@ func (p *RdParser) parseBlock(nestLevel int) *Block {
 		case p.expectCurrent(lexer.IF) || p.expectCurrent(lexer.NOT):
 			conditional := p.parseConditional(nestLevel+1, p.expectCurrent(lexer.NOT))
 			block.Statements = append(block.Statements, conditional)
-			block.Expressions = append(block.Expressions, ExecuteConditionalExpression{
+			block.Expressions = append(block.Expressions, ast.ExecuteConditionalExpression{
 				ConditionalId: conditional.Id,
 			})
 		case p.expectCurrent(lexer.LBRACE):
 			nestedBlock := p.parseBlock(nestLevel + 1)
 			block.Statements = append(block.Statements, nestedBlock)
-			block.Expressions = append(block.Expressions, ExecuteBlockExpression{
-				BlockId: nestedBlock.id,
+			block.Expressions = append(block.Expressions, ast.ExecuteBlockExpression{
+				BlockId: nestedBlock.Id,
 			})
 		case p.expectCurrent(lexer.RBRACE):
 			return block
@@ -116,69 +78,9 @@ func (p *RdParser) parseBlock(nestLevel int) *Block {
 	}
 }
 
-func (b Block) String() string {
-	indent := strings.Repeat("\t", b.nestLevel*2)
-	bodyIndent := strings.Repeat("\t", b.nestLevel*2+1)
-	contentIndent := strings.Repeat("\t", b.nestLevel*2+2)
-
-	statementList := ""
-	for _, statement := range b.Statements {
-		statementList += statement.String() + "\n"
-	}
-
-	expressionList := ""
-	for _, expression := range b.Expressions {
-		expr := expression.String()
-		expr = strings.ReplaceAll(expr, "\n", "\n"+contentIndent)
-		expressionList += contentIndent + expr + "\n"
-	}
-
-	scopeStr := ""
-	if b.isNamedScope() {
-		scopeStr = bodyIndent + "scope: " + b.Scope + "\n"
-	}
-
-	loopStr := ""
-	if b.IsLoop {
-		loopStr = bodyIndent + "loop: true\n"
-	}
-
-	return indent + "block (\n" +
-		bodyIndent + "id: " + fmt.Sprint(b.id) + "\n" +
-		scopeStr +
-		loopStr +
-		bodyIndent + "statements: [\n" +
-		statementList +
-		bodyIndent + "]\n" +
-		bodyIndent + "expressions: [\n" +
-		expressionList +
-		bodyIndent + "]\n" +
-		indent + ")"
-}
-
-type ExecuteBlockExpression struct {
-	BlockId int
-}
-
-func (ExecuteBlockExpression) isExpression() {}
-
-func (e ExecuteBlockExpression) String() string {
-	return "execute-block " + fmt.Sprint(e.BlockId)
-}
-
-type ConditionalStatement struct {
-	nestLevel int
-	inverted  bool
-	Id        int
-	WhenTrue  *Block
-	WhenFalse *Block
-}
-
-func (ConditionalStatement) isStatement() {}
-
-func (p *RdParser) parseConditional(nestLevel int, inverted bool) (c ConditionalStatement) {
-	c.nestLevel = nestLevel
-	c.inverted = inverted
+func (p *RdParser) parseConditional(nestLevel int, inverted bool) (c ast.ConditionalStatement) {
+	c.NestLevel = nestLevel
+	c.Inverted = inverted
 	c.Id = p.conditionalId
 	p.conditionalId++
 
@@ -191,11 +93,11 @@ func (p *RdParser) parseConditional(nestLevel int, inverted bool) (c Conditional
 	c.WhenTrue = p.parseBlock(nestLevel + 1)
 
 	if !p.expectPeek(lexer.ELSE) {
-		c.WhenFalse = &Block{
-			id:          p.blockId,
-			nestLevel:   nestLevel + 1,
-			Statements:  []Statement{},
-			Expressions: []Expression{},
+		c.WhenFalse = &ast.Block{
+			Id:          p.blockId,
+			NestLevel:   nestLevel + 1,
+			Statements:  []ast.Statement{},
+			Expressions: []ast.Expression{},
 		}
 		p.blockId++
 		return
@@ -211,43 +113,4 @@ func (p *RdParser) parseConditional(nestLevel int, inverted bool) (c Conditional
 	p.nextToken()
 	c.WhenFalse = p.parseBlock(nestLevel + 1)
 	return
-}
-
-func (c ConditionalStatement) String() string {
-	indent := strings.Repeat("\t", c.nestLevel*2)
-	bodyIndent := strings.Repeat("\t", c.nestLevel*2+1)
-
-	whenTrueStr := ""
-	if c.WhenTrue != nil {
-		whenTrueStr = c.WhenTrue.String()
-	}
-
-	whenFalseStr := ""
-	if c.WhenFalse != nil {
-		whenFalseStr = c.WhenFalse.String()
-	}
-
-	invertedStr := ""
-	if c.inverted {
-		invertedStr = bodyIndent + "inverted: true\n"
-	}
-
-	return indent + "conditional (\n" +
-		bodyIndent + "id: " + fmt.Sprint(c.Id) + "\n" +
-		invertedStr +
-		bodyIndent + "when-true:\n" +
-		whenTrueStr + "\n" +
-		bodyIndent + "when-false:\n" +
-		whenFalseStr + "\n" +
-		indent + ")"
-}
-
-type ExecuteConditionalExpression struct {
-	ConditionalId int
-}
-
-func (ExecuteConditionalExpression) isExpression() {}
-
-func (e ExecuteConditionalExpression) String() string {
-	return "execute-conditional " + fmt.Sprint(e.ConditionalId)
 }

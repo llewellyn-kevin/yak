@@ -1,13 +1,15 @@
 package rd
 
 import (
+	"llewellyn-kevin/yak/ast"
 	"llewellyn-kevin/yak/lexer"
-	"llewellyn-kevin/yak/parser"
 )
 
 // --------------------------------------------------
 // Recursive Descent (Top-Down) Parser Implementation
 // --------------------------------------------------
+
+const RECURSIVE_DESCENT_STRATEGY = "recursive-descent"
 
 type RdParser struct {
 	l             *lexer.Lexer
@@ -17,7 +19,7 @@ type RdParser struct {
 	conditionalId int
 }
 
-func (RdParser) Strategy() parser.ParsingStrategy { return parser.RECURSIVE_DESCENT_STRATEGY }
+func (RdParser) Strategy() string { return RECURSIVE_DESCENT_STRATEGY }
 
 func NewRdParser(l *lexer.Lexer) *RdParser {
 	p := &RdParser{l: l}
@@ -26,8 +28,8 @@ func NewRdParser(l *lexer.Lexer) *RdParser {
 	return p
 }
 
-func (p *RdParser) Parse() *Program {
-	program := &Program{
+func (p *RdParser) Parse() *ast.Program {
+	program := &ast.Program{
 		MainBlock: p.parseBlock(0),
 	}
 
@@ -47,7 +49,7 @@ func (p *RdParser) nextToken() {
 	p.peekToken = p.l.NextToken()
 }
 
-func (p *RdParser) parseExpression() Expression {
+func (p *RdParser) parseExpression() ast.Expression {
 	switch true {
 	case p.expectCurrent(lexer.INT):
 		return p.parseInt()
