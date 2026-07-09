@@ -5,6 +5,15 @@ import (
 	"strconv"
 )
 
+func IsLiteral(expr Expression) bool {
+	switch expr.(type) {
+	case IntLiteral, FloatLiteral, StringLiteral, SymbolLiteral, BoolLiteral:
+		return true
+	default:
+		return false
+	}
+}
+
 type IntLiteral struct {
 	Token lexer.Token
 	Value int

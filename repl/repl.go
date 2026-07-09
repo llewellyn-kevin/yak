@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"llewellyn-kevin/yak/eval"
 	"llewellyn-kevin/yak/lexer"
 	"llewellyn-kevin/yak/parser"
 	"llewellyn-kevin/yak/parser/rd"
@@ -19,6 +20,8 @@ type Printer interface {
 
 // Start the REPL shell.
 func Run(in io.Reader, p Printer) {
+	state := eval.NewEvalState()
+
 	for {
 		line, runAgain := Prompt(in, p)
 		if !runAgain {
@@ -34,7 +37,12 @@ func Run(in io.Reader, p Printer) {
 			break
 		}
 		program := p.Parse()
-		fmt.Println(program)
+		errors := eval.PartialEval(program, state)
+
+		fmt.Println(state)
+		for _, e := range errors {
+			fmt.Println(e)
+		}
 	}
 	p.Println("Goodbye!")
 }

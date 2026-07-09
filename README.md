@@ -108,12 +108,12 @@ Conditionals
 --------
 `if { }` := evaluate the code block if the top of the stack is truthy
 `not { }` := evaluate the code block if the top of the stack is falsy
-`if { } : { }` := evaluate the first block if the top of the stack is truthy, otherwise execute the second code block
+`if { } else { }` := evaluate the first block if the top of the stack is truthy, otherwise execute the second code block
 
 ```
 1 2 = {
 	'truthy' yakout
-} : {
+} else {
 	'falsey' yakout
 }
 
@@ -200,11 +200,11 @@ if you want to invoke functions multiple times add one or several `.` to the end
 2 add5 -> added
 3 add5 -> added
 {added for yakout}
-// Prints 6, 7, 8
+// Prints 8, 7, 6
 
 4 5 6 add5.. -> addedTwo
 {addedTwo for yakout}
-// Prints 9, 10, 11
+// Prints 11, 10, 9
 
 (2:int)#simpleAdder#(1:int) {
 	+
@@ -217,8 +217,8 @@ if you want to invoke functions multiple times add one or several `.` to the end
 
 `arg_list` := `(2:int 3:string)` --- the initialized stack must be 3 strings than 2 ints
     | `arg_list` := `2` --- the initialized stack takes 2 values of any type
-	| `arg_list` := (2:int|sting) --- union types, int or string
-`return_list` is the same format as arg list, but can also be empty, returning only 1 value
+	| `arg_list` := (2:int|string) --- union types, int or string
+`return_list` is the same format as arg list
 
 
 I/O settings
