@@ -2,6 +2,27 @@ package ast
 
 import "llewellyn-kevin/yak/lexer"
 
+func IsUnaryOperator(expr Expression) bool {
+	switch expr.(type) {
+	case IncrementExpression, DecrementExpression:
+		return true
+	default:
+		return false
+	}
+}
+
+func IsBinaryOperator(expr Expression) bool {
+	switch expr.(type) {
+	case AddExpression, SubtractExpression, MultiplyExpression, DivideExpression,
+		ModuloExpression, PowerExpression, LessThanExpression, GreaterThanExpression,
+		LessThanEqualToExpression, GreaterThanEqualToExpression, EqualToExpression,
+		BorExpression, BandExpression, XorExpression, LeftShiftExpression, RightShiftExpression:
+		return true
+	default:
+		return false
+	}
+}
+
 type AddExpression struct {
 	Token lexer.Token
 }

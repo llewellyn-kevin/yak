@@ -33,6 +33,8 @@ func (e *EvalState) evalExpression(expr ast.Expression) (err error) {
 	switch {
 	case ast.IsLiteral(expr):
 		err = e.evalLiteral(expr)
+	case ast.IsUnaryOperator(expr):
+		err = e.evalUnaryOperator(expr)
 	default:
 		err = fmt.Errorf("Runtime Error: unknown expression %s", expr.String())
 	}
@@ -53,4 +55,21 @@ func (e *EvalState) evalLiteral(expr ast.Expression) (err error) {
 		err = fmt.Errorf("Runtime Error: unknown literal type %s", expr.String())
 	}
 	return
+}
+
+func (e *EvalState) evalUnaryOperator(expr ast.Expression) (err error) {
+	activeStack, err := e.ActiveStack()
+	if err != nil {
+		return
+	}
+
+	literal, err := activeStack.Pop()
+	if err != nil {
+		err = fmt.Errorf("Runtime Error: tried to use a unary operator on empty stack: '%s'", e.stackLabel())
+		return
+	}
+
+	result, err := literal.DoUnaryOperation(expr)
+	activeStack.Push(result)
+	return err
 }

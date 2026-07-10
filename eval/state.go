@@ -52,6 +52,10 @@ func (s *Stack) Peek() Value {
 	return s.head.Value
 }
 
+func (s Stack) Size() uint16 {
+	return s.length
+}
+
 func (s Stack) String() (str string) {
 	str += fmt.Sprintf("(count: %d)", s.length)
 	for n := s.head; n != nil; n = n.next {
@@ -61,15 +65,36 @@ func (s Stack) String() (str string) {
 }
 
 type EvalState struct {
-	MainStack   Stack
-	NamedStacks map[string]Stack
+	MainStack   *Stack
+	NamedStacks map[string]*Stack
+	activeStack string
 }
 
 func NewEvalState() *EvalState {
 	return &EvalState{
-		MainStack:   Stack{},
-		NamedStacks: make(map[string]Stack),
+		MainStack:   &Stack{},
+		NamedStacks: make(map[string]*Stack),
 	}
+}
+
+func (e EvalState) ActiveStack() (*Stack, error) {
+	if e.activeStack == "" {
+		return e.MainStack, nil
+	}
+
+	if active, ok := e.NamedStacks[e.activeStack]; ok {
+		return active, nil
+	}
+
+	return nil, fmt.Errorf("Internal Error: The current active stack is set as '%s', but there is no stack with that name.", e.activeStack)
+}
+
+func (e EvalState) stackLabel() string {
+	r := e.activeStack
+	if r == "" {
+		return "main"
+	}
+	return r
 }
 
 func (e EvalState) NamedStacksString() (str string) {
@@ -82,6 +107,6 @@ func (e EvalState) NamedStacksString() (str string) {
 func (e EvalState) String() string {
 	return "EvalState {\n" +
 		"\tMainStack: " + e.MainStack.String() + "\n" +
-		"\tNamedStacks: \n" + e.NamedStacksString() + "\n" +
+		"\tNamedStacks: \n" + e.NamedStacksString() +
 		"}"
 }
