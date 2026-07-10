@@ -28,6 +28,24 @@ func TestBasicProgramState(t *testing.T) {
 	}
 }
 
+func TestUnaryOperator(t *testing.T) {
+	input := `1++ -- ++ 2 ++++++ 3 ----`
+
+	expected := makeProgram(
+		[]eval.Value{intVal(2), intVal(5), intVal(1)},
+		map[string][]eval.Value{},
+	)
+
+	output, err := evalProgram(input)
+	if err != nil {
+		t.Errorf("Did not expect any errors. Got %s", err)
+	}
+
+	if !programStatesAreEqual(*output, expected) {
+		failOnDivergentPrograms(t, *output, expected)
+	}
+}
+
 func evalProgram(input string) (*eval.EvalState, []error) {
 	program, err := parseProgram(input)
 	if err != nil {
