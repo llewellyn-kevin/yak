@@ -10,6 +10,11 @@ import (
 	"testing"
 )
 
+type basicProgramCase struct {
+	Input    string
+	Expected eval.EvalState
+}
+
 func TestBasicProgramState(t *testing.T) {
 	input := `%foo 2.3 1`
 
@@ -29,10 +34,10 @@ func TestBasicProgramState(t *testing.T) {
 }
 
 func TestUnaryOperator(t *testing.T) {
-	input := `1++ -- ++ 2 ++++++ 3 ----`
+	input := `1++ -- ++ 2 ++++++ 3 ---- 3.2++`
 
 	expected := makeProgram(
-		[]eval.Value{intVal(2), intVal(5), intVal(1)},
+		[]eval.Value{intVal(2), intVal(5), intVal(1), floatVal(4.2)},
 		map[string][]eval.Value{},
 	)
 
@@ -43,6 +48,53 @@ func TestUnaryOperator(t *testing.T) {
 
 	if !programStatesAreEqual(*output, expected) {
 		failOnDivergentPrograms(t, *output, expected)
+	}
+}
+
+func TestBasicBinaryOperators(t *testing.T) {
+	cases := map[string]basicProgramCase{
+		"addition": {
+			Input: "1 2 + 4.0 2.4 + 1 2.5 + 4 5.0 + 4.0 6 +",
+			Expected: makeProgram(
+				[]eval.Value{intVal(3), floatVal(6.4), floatVal(3.5), floatVal(9), floatVal(10)},
+				map[string][]eval.Value{},
+			),
+		},
+		"subtraction": {
+			Input: "2 1 - 4.0 2.4 - 5 2.5 - 4 5.0 - 4.0 6 -",
+			Expected: makeProgram(
+				[]eval.Value{intVal(1), floatVal(1.6), floatVal(2.5), floatVal(-1), floatVal(-2)},
+				map[string][]eval.Value{},
+			),
+		},
+		"multiplication": {
+			Input: "2 1 * 4.0 2.4 * 5 2.5 * 4 5.0 * 4.0 6 *",
+			Expected: makeProgram(
+				[]eval.Value{intVal(2), floatVal(9.6), floatVal(12.5), floatVal(20), floatVal(24)},
+				map[string][]eval.Value{},
+			),
+		},
+		"division": {
+			Input: "10 5 / 10.0 2.0 / 5 2 / 5 2.0 / 5.0 2 /",
+			Expected: makeProgram(
+				[]eval.Value{intVal(2), floatVal(5), intVal(2), floatVal(2.5), floatVal(2.5)},
+				map[string][]eval.Value{},
+			),
+		},
+	}
+
+	for caseName, data := range cases {
+		output, err := evalProgram(data.Input)
+		if err != nil {
+			t.Errorf("Failed test case %s", caseName)
+			t.Errorf("Did not expect any errors. Got %s", err)
+			continue
+		}
+
+		if !programStatesAreEqual(*output, data.Expected) {
+			t.Errorf("Failed test case %s", caseName)
+			failOnDivergentPrograms(t, *output, data.Expected)
+		}
 	}
 }
 

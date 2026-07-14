@@ -44,6 +44,22 @@ func (s *Stack) Pop() (Value, error) {
 	return v, nil
 }
 
+func (s *Stack) PopN(n uint16) ([]Value, error) {
+	if s.length < n {
+		return nil, fmt.Errorf("cannot pop '%d' items off a stack with only length '%d'", n, s.length)
+	}
+	vals := make([]Value, n)
+	var i uint16
+	for i = 0; i < n; i++ {
+		var err error
+		vals[i], err = s.Pop()
+		if err != nil {
+			return nil, errors.New("internal error with stack")
+		}
+	}
+	return vals, nil
+}
+
 func (s *Stack) Peek() Value {
 	if s.length == 0 {
 		return nil

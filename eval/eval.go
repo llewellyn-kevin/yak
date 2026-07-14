@@ -1,6 +1,7 @@
 package eval
 
 import (
+	"errors"
 	"fmt"
 	"llewellyn-kevin/yak/ast"
 )
@@ -35,6 +36,8 @@ func (e *EvalState) evalExpression(expr ast.Expression) (err error) {
 		err = e.evalLiteral(expr)
 	case ast.IsUnaryOperator(expr):
 		err = e.evalUnaryOperator(expr)
+	case ast.IsBinaryOperator(expr):
+		err = e.evalBinaryOperator(expr)
 	default:
 		err = fmt.Errorf("Runtime Error: unknown expression %s", expr.String())
 	}
@@ -71,5 +74,33 @@ func (e *EvalState) evalUnaryOperator(expr ast.Expression) (err error) {
 
 	result, err := literal.DoUnaryOperation(expr)
 	activeStack.Push(result)
-	return err
+	return
+}
+
+func (e *EvalState) evalBinaryOperator(expr ast.Expression) (err error) {
+	activeStack, err := e.ActiveStack()
+	if err != nil {
+		return
+	}
+
+	vals, err := activeStack.PopN(2)
+	if err != nil {
+		err = fmt.Errorf("Runtime Error: tried to use a binary operator on stack with two few items: '%s'", e.stackLabel())
+		return
+	}
+
+	if len(vals) != 2 {
+		err = errors.New("Internal Error: stack popping logic failure")
+		return
+	}
+
+	x, y := vals[0], vals[1]
+	res, err := y.DoBinaryOperation(x, expr)
+	if err != nil {
+		activeStack.Push(y)
+		activeStack.Push(x)
+		return err
+	}
+	activeStack.Push(res)
+	return
 }

@@ -9,6 +9,7 @@ import (
 type Value interface {
 	isValue()
 	DoUnaryOperation(ast.Expression) (Value, error)
+	DoBinaryOperation(Value, ast.Expression) (Value, error)
 	String() string
 }
 
@@ -27,6 +28,14 @@ func (v IntValue) DoUnaryOperation(e ast.Expression) (Value, error) {
 	default:
 		return v, fmt.Errorf("Tried to perform illegal operation (%s) on Value of type integer.", e)
 	}
+}
+
+func (v IntValue) DoBinaryOperation(other Value, e ast.Expression) (Value, error) {
+	return numericBinaryOp(v, other, e)
+}
+
+type number interface {
+	float64 | int
 }
 
 func (i IntValue) String() string {
@@ -52,6 +61,10 @@ func (v FloatValue) DoUnaryOperation(e ast.Expression) (Value, error) {
 	return &FloatValue{Value: n}, nil
 }
 
+func (v FloatValue) DoBinaryOperation(other Value, e ast.Expression) (Value, error) {
+	return numericBinaryOp(v, other, e)
+}
+
 func (f FloatValue) String() string {
 	return strconv.FormatFloat(f.Value, 'f', -1, 64)
 }
@@ -63,6 +76,10 @@ type StringValue struct {
 func (StringValue) isValue() {}
 
 func (v StringValue) DoUnaryOperation(e ast.Expression) (Value, error) {
+	return v, fmt.Errorf("Tried to perform illegal operation (%s) on Value of type string.", e)
+}
+
+func (v StringValue) DoBinaryOperation(other Value, e ast.Expression) (Value, error) {
 	return v, fmt.Errorf("Tried to perform illegal operation (%s) on Value of type string.", e)
 }
 
@@ -80,6 +97,50 @@ func (v SymbolValue) DoUnaryOperation(e ast.Expression) (Value, error) {
 	return v, fmt.Errorf("Tried to perform illegal operation (%s) on Value of type symbol.", e)
 }
 
+func (v SymbolValue) DoBinaryOperation(other Value, e ast.Expression) (Value, error) {
+	return v, fmt.Errorf("Tried to perform illegal operation (%s) on Value of type string.", e)
+}
+
 func (s SymbolValue) String() string {
 	return "%" + s.Value
+}
+
+func numericAdder[V number](a, b V) V      { return a + b }
+func numericSubtracter[V number](a, b V) V { return a - b }
+func numericMultiplier[V number](a, b V) V { return a * b }
+func numericDivider[V number](a, b V) V    { return a / b }
+
+func numericBinaryOp(a, b Value, e ast.Expression) (Value, error) {
+	switch e.(type) {
+	case ast.AddExpression:
+		return promoteAndApply(a, b, numericAdder, numericAdder)
+	case ast.SubtractExpression:
+		return promoteAndApply(a, b, numericSubtracter, numericSubtracter)
+	case ast.MultiplyExpression:
+		return promoteAndApply(a, b, numericMultiplier, numericMultiplier)
+	case ast.DivideExpression:
+		return promoteAndApply(a, b, numericDivider, numericDivider)
+	default:
+		return nil, fmt.Errorf("unsupported binary operation %s for numeric types", e)
+	}
+}
+
+func promoteAndApply(a, b Value, intFn func(int, int) int, floatFn func(float64, float64) float64) (Value, error) {
+	switch va := a.(type) {
+	case IntValue:
+		switch vb := b.(type) {
+		case IntValue:
+			return &IntValue{intFn(va.Value, vb.Value)}, nil
+		case FloatValue:
+			return &FloatValue{floatFn(float64(va.Value), vb.Value)}, nil
+		}
+	case FloatValue:
+		switch vb := b.(type) {
+		case IntValue:
+			return &FloatValue{floatFn(va.Value, float64(vb.Value))}, nil
+		case FloatValue:
+			return &FloatValue{floatFn(va.Value, vb.Value)}, nil
+		}
+	}
+	return nil, fmt.Errorf("type mismatch for binary operation")
 }
