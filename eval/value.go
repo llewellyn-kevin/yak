@@ -3,6 +3,7 @@ package eval
 import (
 	"fmt"
 	"llewellyn-kevin/yak/ast"
+	"math"
 	"strconv"
 )
 
@@ -66,7 +67,7 @@ func (v FloatValue) DoBinaryOperation(other Value, e ast.Expression) (Value, err
 }
 
 func (f FloatValue) String() string {
-	return strconv.FormatFloat(f.Value, 'f', -1, 64)
+	return strconv.FormatFloat(f.Value, 'f', 6, 64)
 }
 
 type StringValue struct {
@@ -120,6 +121,11 @@ func numericBinaryOp(a, b Value, e ast.Expression) (Value, error) {
 		return promoteAndApply(a, b, numericMultiplier, numericMultiplier)
 	case ast.DivideExpression:
 		return promoteAndApply(a, b, numericDivider, numericDivider)
+	case ast.ModuloExpression:
+		return promoteAndApply(a, b,
+			func(a, b int) int { return a % b },
+			func(a, b float64) float64 { return math.Mod(a, b) },
+		)
 	default:
 		return nil, fmt.Errorf("unsupported binary operation %s for numeric types", e)
 	}

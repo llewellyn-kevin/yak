@@ -54,30 +54,37 @@ func TestUnaryOperator(t *testing.T) {
 func TestBasicBinaryOperators(t *testing.T) {
 	cases := map[string]basicProgramCase{
 		"addition": {
-			Input: "1 2 + 4.0 2.4 + 1 2.5 + 4 5.0 + 4.0 6 +",
+			Input: "1 2 + 4.0 2.4 + 1 2.5 + 4 5.0 + 4.0 6 + -8 2 +",
 			Expected: makeProgram(
-				[]eval.Value{intVal(3), floatVal(6.4), floatVal(3.5), floatVal(9), floatVal(10)},
+				[]eval.Value{intVal(3), floatVal(6.4), floatVal(3.5), floatVal(9), floatVal(10), intVal(-6)},
 				map[string][]eval.Value{},
 			),
 		},
 		"subtraction": {
-			Input: "2 1 - 4.0 2.4 - 5 2.5 - 4 5.0 - 4.0 6 -",
+			Input: "2 1 - 4.0 2.4 - 5 2.5 - 4 5.0 - 4.0 6 - -3.2 3 -",
 			Expected: makeProgram(
-				[]eval.Value{intVal(1), floatVal(1.6), floatVal(2.5), floatVal(-1), floatVal(-2)},
+				[]eval.Value{intVal(1), floatVal(1.6), floatVal(2.5), floatVal(-1), floatVal(-2), floatVal(-6.2)},
 				map[string][]eval.Value{},
 			),
 		},
 		"multiplication": {
-			Input: "2 1 * 4.0 2.4 * 5 2.5 * 4 5.0 * 4.0 6 *",
+			Input: "2 1 * 4.0 2.4 * 5 2.5 * 4 5.0 * 4.0 6 * 3 -2 *",
 			Expected: makeProgram(
-				[]eval.Value{intVal(2), floatVal(9.6), floatVal(12.5), floatVal(20), floatVal(24)},
+				[]eval.Value{intVal(2), floatVal(9.6), floatVal(12.5), floatVal(20), floatVal(24), intVal(-6)},
 				map[string][]eval.Value{},
 			),
 		},
 		"division": {
-			Input: "10 5 / 10.0 2.0 / 5 2 / 5 2.0 / 5.0 2 /",
+			Input: "10 5 / 10.0 2.0 / 5 2 / 5 2.0 / 5.0 2 / 10 -2 /",
 			Expected: makeProgram(
-				[]eval.Value{intVal(2), floatVal(5), intVal(2), floatVal(2.5), floatVal(2.5)},
+				[]eval.Value{intVal(2), floatVal(5), intVal(2), floatVal(2.5), floatVal(2.5), intVal(-5)},
+				map[string][]eval.Value{},
+			),
+		},
+		"modulo": {
+			Input: "10 3 % 9.3 3 % 10.5 3 % 11 -2 % -11 2 %",
+			Expected: makeProgram(
+				[]eval.Value{intVal(1), floatVal(.3), floatVal(1.5), intVal(1), intVal(-1)},
 				map[string][]eval.Value{},
 			),
 		},
