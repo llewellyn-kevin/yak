@@ -56,6 +56,8 @@ func (e *EvalState) evalLiteral(expr ast.Expression) (err error) {
 		e.MainStack.Push(StringValue{Value: v.Value})
 	case ast.SymbolLiteral:
 		e.MainStack.Push(SymbolValue{Value: v.Value})
+	case ast.BoolLiteral:
+		e.MainStack.Push(BooleanValue{Value: v.Value})
 	default:
 		err = fmt.Errorf("Runtime Error: unknown literal type %s", expr.String())
 	}

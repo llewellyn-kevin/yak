@@ -129,6 +129,31 @@ func (s SymbolValue) String() string {
 	return "%" + s.Value
 }
 
+type BooleanValue struct {
+	Value bool
+}
+
+func (BooleanValue) isValue() {}
+
+func (v BooleanValue) DoUnaryOperation(ast.Expression) (Value, error) {
+	return v, fmt.Errorf("Tried to perform unary operation wtih boolean literal (%s)", v)
+}
+
+func (v BooleanValue) DoBinaryOperation(Value, ast.Expression) (Value, error) {
+	return v, fmt.Errorf("Tried to perform binary operation wtih boolean literal (%s)", v)
+}
+
+func (v BooleanValue) DoBitwiseOperation(Value, ast.Expression) (Value, error) {
+	return v, fmt.Errorf("Tried to perform bitwise operation with non integer literal (%s)", v)
+}
+
+func (v BooleanValue) String() string {
+	if v.Value {
+		return "true"
+	}
+	return "false"
+}
+
 func numericAdder[V number](a, b V) V      { return a + b }
 func numericSubtracter[V number](a, b V) V { return a - b }
 func numericMultiplier[V number](a, b V) V { return a * b }

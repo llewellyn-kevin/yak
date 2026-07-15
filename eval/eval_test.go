@@ -16,10 +16,10 @@ type basicProgramCase struct {
 }
 
 func TestBasicProgramState(t *testing.T) {
-	input := `%foo 2.3 1`
+	input := `%foo 2.3 1 true false`
 
 	expected := makeProgram(
-		[]eval.Value{symVal("foo"), floatVal(2.3), intVal(1)},
+		[]eval.Value{symVal("foo"), floatVal(2.3), intVal(1), boolVal(true), boolVal(false)},
 		map[string][]eval.Value{},
 	)
 
@@ -140,6 +140,7 @@ func intVal(v int) eval.IntValue          { return eval.IntValue{Value: v} }
 func floatVal(v float64) eval.FloatValue  { return eval.FloatValue{Value: v} }
 func stringVal(v string) eval.StringValue { return eval.StringValue{Value: v} }
 func symVal(v string) eval.SymbolValue    { return eval.SymbolValue{Value: v} }
+func boolVal(v bool) eval.BooleanValue    { return eval.BooleanValue{Value: v} }
 
 func makeProgram(main []eval.Value, named map[string][]eval.Value) (s eval.EvalState) {
 	s = *eval.NewEvalState()
