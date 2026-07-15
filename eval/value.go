@@ -1,6 +1,7 @@
 package eval
 
 import (
+	"errors"
 	"fmt"
 	"llewellyn-kevin/yak/ast"
 	"math"
@@ -11,6 +12,7 @@ type Value interface {
 	isValue()
 	DoUnaryOperation(ast.Expression) (Value, error)
 	DoBinaryOperation(Value, ast.Expression) (Value, error)
+	DoBitwiseOperation(Value, ast.Expression) (Value, error)
 	String() string
 }
 
@@ -33,6 +35,15 @@ func (v IntValue) DoUnaryOperation(e ast.Expression) (Value, error) {
 
 func (v IntValue) DoBinaryOperation(other Value, e ast.Expression) (Value, error) {
 	return numericBinaryOp(v, other, e)
+}
+
+func (v IntValue) DoBitwiseOperation(other Value, e ast.Expression) (Value, error) {
+	switch ot := other.(type) {
+	case IntValue:
+		return intBitwiseOperation(v.Value, ot.Value, e)
+	default:
+		return v, fmt.Errorf("Tried to perform bitwise operation with non integer literal (%s)", other)
+	}
 }
 
 type number interface {
@@ -66,6 +77,10 @@ func (v FloatValue) DoBinaryOperation(other Value, e ast.Expression) (Value, err
 	return numericBinaryOp(v, other, e)
 }
 
+func (v FloatValue) DoBitwiseOperation(other Value, e ast.Expression) (Value, error) {
+	return v, fmt.Errorf("Tried to perform bitwise operation with non integer literal (%s)", v)
+}
+
 func (f FloatValue) String() string {
 	return strconv.FormatFloat(f.Value, 'f', 6, 64)
 }
@@ -84,6 +99,10 @@ func (v StringValue) DoBinaryOperation(other Value, e ast.Expression) (Value, er
 	return v, fmt.Errorf("Tried to perform illegal operation (%s) on Value of type string.", e)
 }
 
+func (v StringValue) DoBitwiseOperation(other Value, e ast.Expression) (Value, error) {
+	return v, fmt.Errorf("Tried to perform bitwise operation with non integer literal (%s)", v)
+}
+
 func (s StringValue) String() string {
 	return strconv.Quote(s.Value)
 }
@@ -100,6 +119,10 @@ func (v SymbolValue) DoUnaryOperation(e ast.Expression) (Value, error) {
 
 func (v SymbolValue) DoBinaryOperation(other Value, e ast.Expression) (Value, error) {
 	return v, fmt.Errorf("Tried to perform illegal operation (%s) on Value of type string.", e)
+}
+
+func (v SymbolValue) DoBitwiseOperation(other Value, e ast.Expression) (Value, error) {
+	return v, fmt.Errorf("Tried to perform bitwise operation with non integer literal (%s)", v)
 }
 
 func (s SymbolValue) String() string {
@@ -149,4 +172,21 @@ func promoteAndApply(a, b Value, intFn func(int, int) int, floatFn func(float64,
 		}
 	}
 	return nil, fmt.Errorf("type mismatch for binary operation")
+}
+
+func intBitwiseOperation(a, b int, e ast.Expression) (Value, error) {
+	switch e.(type) {
+	case ast.BandExpression:
+		return &IntValue{Value: a & b}, nil
+	case ast.BorExpression:
+		return &IntValue{Value: a | b}, nil
+	case ast.XorExpression:
+		return &IntValue{Value: a ^ b}, nil
+	case ast.LeftShiftExpression:
+		return &IntValue{Value: a << b}, nil
+	case ast.RightShiftExpression:
+		return &IntValue{Value: a >> b}, nil
+	default:
+		return nil, errors.New("Unrecognized bitwise expression")
+	}
 }

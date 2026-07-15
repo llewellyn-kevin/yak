@@ -88,6 +88,20 @@ func TestBasicBinaryOperators(t *testing.T) {
 				map[string][]eval.Value{},
 			),
 		},
+		"exponent": {
+			Input: "",
+			Expected: makeProgram(
+				[]eval.Value{},
+				map[string][]eval.Value{},
+			),
+		},
+		"binary": {
+			Input: "12 10 & 12 10 | 12 10 ^ 5 2 << 20 2 >>",
+			Expected: makeProgram(
+				[]eval.Value{intVal(8), intVal(14), intVal(6), intVal(20), intVal(5)},
+				map[string][]eval.Value{},
+			),
+		},
 	}
 
 	for caseName, data := range cases {

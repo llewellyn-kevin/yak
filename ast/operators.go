@@ -15,8 +15,16 @@ func IsBinaryOperator(expr Expression) bool {
 	switch expr.(type) {
 	case AddExpression, SubtractExpression, MultiplyExpression, DivideExpression,
 		ModuloExpression, PowerExpression, LessThanExpression, GreaterThanExpression,
-		LessThanEqualToExpression, GreaterThanEqualToExpression, EqualToExpression,
-		BorExpression, BandExpression, XorExpression, LeftShiftExpression, RightShiftExpression:
+		LessThanEqualToExpression, GreaterThanEqualToExpression, EqualToExpression:
+		return true
+	default:
+		return false
+	}
+}
+
+func IsBitwiseOperator(expr Expression) bool {
+	switch expr.(type) {
+	case BorExpression, BandExpression, XorExpression, LeftShiftExpression, RightShiftExpression:
 		return true
 	default:
 		return false
