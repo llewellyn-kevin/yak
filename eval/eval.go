@@ -89,7 +89,7 @@ func (e *EvalState) evalBinaryOperator(expr ast.Expression) (err error) {
 
 	vals, err := activeStack.PopN(2)
 	if err != nil {
-		err = fmt.Errorf("Runtime Error: tried to use a binary operator on stack with two few items: '%s'", e.stackLabel())
+		err = fmt.Errorf("Runtime Error: tried to use a binary operator on stack with fewer than 2 items: '%s'", e.stackLabel())
 		return
 	}
 
@@ -99,6 +99,13 @@ func (e *EvalState) evalBinaryOperator(expr ast.Expression) (err error) {
 	}
 
 	x, y := vals[0], vals[1]
+
+	if _, ok := expr.(ast.EqualToExpression); ok {
+        fmt.Println(fmt.Sprintf("foobar %s", expr))
+		activeStack.Push(&BooleanValue{Value: x == y})
+		return nil
+	}
+
 	res, err := y.DoBinaryOperation(x, expr)
 	if err != nil {
 		activeStack.Push(y)
@@ -117,7 +124,7 @@ func (e *EvalState) evalBitwiseOperator(expr ast.Expression) (err error) {
 
 	vals, err := activeStack.PopN(2)
 	if err != nil {
-		err = fmt.Errorf("Runtime Error: tried to use a binary operator on stack with two few items: '%s'", e.stackLabel())
+		err = fmt.Errorf("Runtime Error: tried to use a binary operator on stack with fewer than 2 items: '%s'", e.stackLabel())
 		return
 	}
 

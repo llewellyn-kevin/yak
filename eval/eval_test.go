@@ -102,6 +102,13 @@ func TestBasicBinaryOperators(t *testing.T) {
 				map[string][]eval.Value{},
 			),
 		},
+		"comparison": {
+			Input: "4 5 < 4 5 > 5 5 <= 6 5 >= 0 -1 <= 1 1 = 1 2 = true 1 = 1.2 1.2 = 1.0 1 =",
+			Expected: makeProgram(
+				[]eval.Value{boolVal(true), boolVal(false), boolVal(true), boolVal(true), boolVal(false), boolVal(true), boolVal(false), boolVal(false), boolVal(true), boolVal(false)},
+				map[string][]eval.Value{},
+			),
+		},
 	}
 
 	for caseName, data := range cases {

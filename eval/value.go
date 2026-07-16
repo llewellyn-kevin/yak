@@ -154,10 +154,15 @@ func (v BooleanValue) String() string {
 	return "false"
 }
 
-func numericAdder[V number](a, b V) V      { return a + b }
-func numericSubtracter[V number](a, b V) V { return a - b }
-func numericMultiplier[V number](a, b V) V { return a * b }
-func numericDivider[V number](a, b V) V    { return a / b }
+func numericAdder[V number](a, b V) V            { return a + b }
+func numericSubtracter[V number](a, b V) V       { return a - b }
+func numericMultiplier[V number](a, b V) V       { return a * b }
+func numericDivider[V number](a, b V) V          { return a / b }
+func numericComparisonEQ[V number](a, b V) bool  { return a == b }
+func numericComparisonGT[V number](a, b V) bool  { return a > b }
+func numericComparisonGTE[V number](a, b V) bool { return a >= b }
+func numericComparisonLT[V number](a, b V) bool  { return a < b }
+func numericComparisonLTE[V number](a, b V) bool { return a <= b }
 
 func numericBinaryOp(a, b Value, e ast.Expression) (Value, error) {
 	switch e.(type) {
@@ -174,6 +179,14 @@ func numericBinaryOp(a, b Value, e ast.Expression) (Value, error) {
 			func(a, b int) int { return a % b },
 			func(a, b float64) float64 { return math.Mod(a, b) },
 		)
+	case ast.GreaterThanExpression:
+		return normalizeAndApplyValueComparison(a, b, numericComparisonGT)
+	case ast.GreaterThanEqualToExpression:
+		return normalizeAndApplyValueComparison(a, b, numericComparisonGTE)
+	case ast.LessThanExpression:
+		return normalizeAndApplyValueComparison(a, b, numericComparisonLT)
+	case ast.LessThanEqualToExpression:
+		return normalizeAndApplyValueComparison(a, b, numericComparisonLTE)
 	default:
 		return nil, fmt.Errorf("unsupported binary operation %s for numeric types", e)
 	}
@@ -197,6 +210,37 @@ func promoteAndApply(a, b Value, intFn func(int, int) int, floatFn func(float64,
 		}
 	}
 	return nil, fmt.Errorf("type mismatch for binary operation")
+}
+
+func normalizeAndApplyValueComparison(a, b Value, comparisonFn func(float64, float64) bool) (Value, error) {
+	al, err := valueAsFloat(a)
+	if err != nil {
+		return nil, fmt.Errorf("type mistmatch for comparison operator, tried to do comparison with '%s' and '%s'", a, b)
+	}
+
+	bl, err := valueAsFloat(b)
+	if err != nil {
+		return nil, fmt.Errorf("type mistmatch for comparison operator, tried to do comparison with '%s' and '%s'", a, b)
+	}
+
+	res := comparisonFn(al, bl)
+	return &BooleanValue{Value: res}, nil
+}
+
+func valueAsFloat(v Value) (float64, error) {
+	switch vt := v.(type) {
+	case IntValue:
+		return float64(vt.Value), nil
+	case FloatValue:
+		return vt.Value, nil
+	case BooleanValue:
+		if vt.Value {
+			return 1.0, nil
+		}
+		return 0.0, nil
+	default:
+		return 0.0, fmt.Errorf("could not convert this type to a float")
+	}
 }
 
 func intBitwiseOperation(a, b int, e ast.Expression) (Value, error) {
