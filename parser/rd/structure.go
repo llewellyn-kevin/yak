@@ -78,7 +78,8 @@ func (p *RdParser) parseBlock(nestLevel int) *ast.Block {
 	}
 }
 
-func (p *RdParser) parseConditional(nestLevel int, inverted bool) (c ast.ConditionalStatement) {
+func (p *RdParser) parseConditional(nestLevel int, inverted bool) *ast.ConditionalStatement {
+	c := &ast.ConditionalStatement{}
 	c.NestLevel = nestLevel
 	c.Inverted = inverted
 	c.Id = p.conditionalId
@@ -100,7 +101,7 @@ func (p *RdParser) parseConditional(nestLevel int, inverted bool) (c ast.Conditi
 			Expressions: []ast.Expression{},
 		}
 		p.blockId++
-		return
+		return c
 	}
 
 	p.nextToken()
@@ -112,5 +113,5 @@ func (p *RdParser) parseConditional(nestLevel int, inverted bool) (c ast.Conditi
 
 	p.nextToken()
 	c.WhenFalse = p.parseBlock(nestLevel + 1)
-	return
+	return c
 }

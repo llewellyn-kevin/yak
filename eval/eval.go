@@ -20,23 +20,47 @@ func PartialEval(p *ast.Program, state *EvalState) []error {
 	return errors
 }
 
-func (e *EvalState) executeBlock(block *ast.Block) (errors []error) {
+func (e *EvalState) executeBlock(block *ast.Block) (errorList []error) {
 	for _, expr := range block.Expressions {
-		var err error
-		if blockExp, ok := expr.(ast.ExecuteBlockExpression); ok {
-			block, err = block.GetBlock(blockExp.BlockId)
-			if err == nil {
-				errors = append(errors, e.executeBlock(block)...)
+		switch typed := expr.(type) {
+		case ast.ExecuteBlockExpression:
+			errorList = append(errorList, e.execBlockExpr(typed, block)...)
+		case ast.ExecuteConditionalExpression:
+			errorList = append(errorList, e.execCondExpr(typed, block)...)
+		default:
+			if err := e.evalExpression(expr); err != nil {
+				errorList = append(errorList, err)
 			}
-		} else {
-			err = e.evalExpression(expr)
-		}
-
-		if err != nil {
-			errors = append(errors, err)
 		}
 	}
 	return
+}
+
+func (e *EvalState) execBlockExpr(expr ast.ExecuteBlockExpression, block *ast.Block) []error {
+	nested, err := block.GetBlock(expr.BlockId)
+	if err != nil {
+		return []error{err}
+	}
+	return e.executeBlock(nested)
+}
+
+func (e *EvalState) execCondExpr(expr ast.ExecuteConditionalExpression, block *ast.Block) []error {
+	cond, err := block.GetConditional(expr.ConditionalId)
+	if err != nil {
+		return []error{err}
+	}
+	stack, err := e.ActiveStack()
+	if err != nil {
+		return []error{err}
+	}
+	val, err := stack.Pop()
+	if err != nil {
+		return []error{fmt.Errorf("Runtime Error: tried to run a conditional branch on an empty stack")}
+	}
+	if val.IsTruthy() {
+		return e.executeBlock(cond.WhenTrue)
+	}
+	return e.executeBlock(cond.WhenFalse)
 }
 
 func (e *EvalState) evalExpression(expr ast.Expression) (err error) {

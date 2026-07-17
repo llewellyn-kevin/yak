@@ -43,6 +43,17 @@ func (b Block) GetBlock(id int) (*Block, error) {
 	return nil, fmt.Errorf("Could not find block with id `%d`", id)
 }
 
+func (b Block) GetConditional(id int) (*ConditionalStatement, error) {
+	for _, statement := range b.Statements {
+		if block, ok := statement.(*ConditionalStatement); ok {
+			if block.Id == id {
+				return block, nil
+			}
+		}
+	}
+	return nil, fmt.Errorf("Could not find conditional block with id `%d`", id)
+}
+
 func (b Block) String() string {
 	indent := strings.Repeat("\t", b.NestLevel*2)
 	bodyIndent := strings.Repeat("\t", b.NestLevel*2+1)

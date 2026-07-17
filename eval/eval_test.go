@@ -135,6 +135,27 @@ func TestBlocks(t *testing.T) {
 				map[string][]eval.Value{},
 			),
 		},
+		"executes conditional blocks only when true": {
+			Input: "true if { 1 } false if { 2 }",
+			Expected: makeProgram(
+				[]eval.Value{intVal(1)},
+				map[string][]eval.Value{},
+			),
+		},
+		"executes else statement on falsey value": {
+			Input: "true if { 1 } false if { 2 } else { 3 }",
+			Expected: makeProgram(
+				[]eval.Value{intVal(1), intVal(3)},
+				map[string][]eval.Value{},
+			),
+		},
+		"evaluates any value's truthiness": {
+			Input: "1 if { 1 } 0 if { 0 } 4.2 if { 4.2 } 0.0 if { 0.0 } %foo if { %foo } else { %bar }",
+			Expected: makeProgram(
+				[]eval.Value{intVal(1), floatVal(4.2), symVal("foo")},
+				map[string][]eval.Value{},
+			),
+		},
 	}
 
 	for caseName, data := range cases {
