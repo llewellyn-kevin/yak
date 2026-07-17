@@ -1,7 +1,6 @@
 package eval
 
 import (
-	"errors"
 	"fmt"
 	"llewellyn-kevin/yak/ast"
 	"math"
@@ -30,7 +29,7 @@ func (v IntValue) DoUnaryOperation(e ast.Expression) (Value, error) {
 	case ast.DecrementExpression:
 		return &IntValue{Value: v.Value - 1}, nil
 	default:
-		return v, fmt.Errorf("Tried to perform illegal operation (%s) on Value of type integer.", e)
+		return v, TypeErrorf("tried to perform illegal operation (%s) on value of type integer", e)
 	}
 }
 
@@ -43,7 +42,7 @@ func (v IntValue) DoBitwiseOperation(other Value, e ast.Expression) (Value, erro
 	case IntValue:
 		return intBitwiseOperation(v.Value, ot.Value, e)
 	default:
-		return v, fmt.Errorf("Tried to perform bitwise operation with non integer literal (%s)", other)
+		return v, TypeErrorf("tried to perform bitwise operation with non-integer literal (%s)", other)
 	}
 }
 
@@ -73,7 +72,7 @@ func (v FloatValue) DoUnaryOperation(e ast.Expression) (Value, error) {
 	case ast.DecrementExpression:
 		n = v.Value - 1.0
 	default:
-		return v, fmt.Errorf("Tried to perform illegal operation (%s) on Value of type float.", e)
+		return v, TypeErrorf("tried to perform illegal operation (%s) on value of type float", e)
 	}
 	return &FloatValue{Value: n}, nil
 }
@@ -83,7 +82,7 @@ func (v FloatValue) DoBinaryOperation(other Value, e ast.Expression) (Value, err
 }
 
 func (v FloatValue) DoBitwiseOperation(other Value, e ast.Expression) (Value, error) {
-	return v, fmt.Errorf("Tried to perform bitwise operation with non integer literal (%s)", v)
+	return v, TypeErrorf("tried to perform bitwise operation with non-integer literal (%s)", v)
 }
 
 func (f FloatValue) IsTruthy() bool {
@@ -101,15 +100,15 @@ type StringValue struct {
 func (StringValue) isValue() {}
 
 func (v StringValue) DoUnaryOperation(e ast.Expression) (Value, error) {
-	return v, fmt.Errorf("Tried to perform illegal operation (%s) on Value of type string.", e)
+	return v, TypeErrorf("tried to perform illegal operation (%s) on value of type string", e)
 }
 
 func (v StringValue) DoBinaryOperation(other Value, e ast.Expression) (Value, error) {
-	return v, fmt.Errorf("Tried to perform illegal operation (%s) on Value of type string.", e)
+	return v, TypeErrorf("tried to perform illegal operation (%s) on value of type string", e)
 }
 
 func (v StringValue) DoBitwiseOperation(other Value, e ast.Expression) (Value, error) {
-	return v, fmt.Errorf("Tried to perform bitwise operation with non integer literal (%s)", v)
+	return v, TypeErrorf("tried to perform bitwise operation with non-integer literal (%s)", v)
 }
 
 func (s StringValue) IsTruthy() bool {
@@ -127,15 +126,15 @@ type SymbolValue struct {
 func (SymbolValue) isValue() {}
 
 func (v SymbolValue) DoUnaryOperation(e ast.Expression) (Value, error) {
-	return v, fmt.Errorf("Tried to perform illegal operation (%s) on Value of type symbol.", e)
+	return v, TypeErrorf("tried to perform illegal operation (%s) on value of type symbol", e)
 }
 
 func (v SymbolValue) DoBinaryOperation(other Value, e ast.Expression) (Value, error) {
-	return v, fmt.Errorf("Tried to perform illegal operation (%s) on Value of type string.", e)
+	return v, TypeErrorf("tried to perform illegal operation (%s) on value of type symbol", e)
 }
 
 func (v SymbolValue) DoBitwiseOperation(other Value, e ast.Expression) (Value, error) {
-	return v, fmt.Errorf("Tried to perform bitwise operation with non integer literal (%s)", v)
+	return v, TypeErrorf("tried to perform bitwise operation with non-integer literal (%s)", v)
 }
 
 func (SymbolValue) IsTruthy() bool {
@@ -153,15 +152,15 @@ type BooleanValue struct {
 func (BooleanValue) isValue() {}
 
 func (v BooleanValue) DoUnaryOperation(ast.Expression) (Value, error) {
-	return v, fmt.Errorf("Tried to perform unary operation wtih boolean literal (%s)", v)
+	return v, TypeErrorf("tried to perform unary operation with boolean literal (%s)", v)
 }
 
 func (v BooleanValue) DoBinaryOperation(Value, ast.Expression) (Value, error) {
-	return v, fmt.Errorf("Tried to perform binary operation wtih boolean literal (%s)", v)
+	return v, TypeErrorf("tried to perform binary operation with boolean literal (%s)", v)
 }
 
 func (v BooleanValue) DoBitwiseOperation(Value, ast.Expression) (Value, error) {
-	return v, fmt.Errorf("Tried to perform bitwise operation with non integer literal (%s)", v)
+	return v, TypeErrorf("tried to perform bitwise operation with non-integer literal (%s)", v)
 }
 
 func (v BooleanValue) IsTruthy() bool {
@@ -209,7 +208,7 @@ func numericBinaryOp(a, b Value, e ast.Expression) (Value, error) {
 	case ast.LessThanEqualToExpression:
 		return normalizeAndApplyValueComparison(a, b, numericComparisonLTE)
 	default:
-		return nil, fmt.Errorf("unsupported binary operation %s for numeric types", e)
+		return nil, InternalErrorf("unsupported binary operation %s for numeric types", e)
 	}
 }
 
@@ -230,18 +229,18 @@ func promoteAndApply(a, b Value, intFn func(int, int) int, floatFn func(float64,
 			return &FloatValue{floatFn(va.Value, vb.Value)}, nil
 		}
 	}
-	return nil, fmt.Errorf("type mismatch for binary operation")
+	return nil, TypeError{Message: "type mismatch for binary operation"}
 }
 
 func normalizeAndApplyValueComparison(a, b Value, comparisonFn func(float64, float64) bool) (Value, error) {
 	al, err := valueAsFloat(a)
 	if err != nil {
-		return nil, fmt.Errorf("type mistmatch for comparison operator, tried to do comparison with '%s' and '%s'", a, b)
+		return nil, TypeError{Message: fmt.Sprintf("type mismatch for comparison operator, tried to do comparison with '%s' and '%s'", a, b)}
 	}
 
 	bl, err := valueAsFloat(b)
 	if err != nil {
-		return nil, fmt.Errorf("type mistmatch for comparison operator, tried to do comparison with '%s' and '%s'", a, b)
+		return nil, TypeError{Message: fmt.Sprintf("type mismatch for comparison operator, tried to do comparison with '%s' and '%s'", a, b)}
 	}
 
 	res := comparisonFn(al, bl)
@@ -260,7 +259,7 @@ func valueAsFloat(v Value) (float64, error) {
 		}
 		return 0.0, nil
 	default:
-		return 0.0, fmt.Errorf("could not convert this type to a float")
+		return 0.0, TypeError{Message: "could not convert this type to a float"}
 	}
 }
 
@@ -277,6 +276,6 @@ func intBitwiseOperation(a, b int, e ast.Expression) (Value, error) {
 	case ast.RightShiftExpression:
 		return &IntValue{Value: a >> b}, nil
 	default:
-		return nil, errors.New("Unrecognized bitwise expression")
+		return nil, InternalError{Message: "unrecognized bitwise expression"}
 	}
 }

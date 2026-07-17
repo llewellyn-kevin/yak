@@ -1,6 +1,7 @@
 package eval_test
 
 import (
+	"errors"
 	"llewellyn-kevin/yak/ast"
 	"llewellyn-kevin/yak/eval"
 	"llewellyn-kevin/yak/lexer"
@@ -169,6 +170,54 @@ func TestBlocks(t *testing.T) {
 		if !programStatesAreEqual(*output, data.Expected) {
 			t.Errorf("Failed test case %s", caseName)
 			failOnDivergentPrograms(t, *output, data.Expected)
+		}
+	}
+}
+
+func TestRuntimeErrors(t *testing.T) {
+	cases := []struct {
+		name  string
+		input string
+	}{
+		{"empty stack for unary operator", `++`},
+		{"empty stack for conditional", `if { 1 }`},
+		{"empty stack for binary operator", `1 2 + +`},
+		{"empty stack for bitwise operator", `1 2 & &`},
+	}
+
+	for _, tc := range cases {
+		_, errs := evalProgram(tc.input)
+		if len(errs) == 0 {
+			t.Errorf("%s: expected error, got none", tc.name)
+			continue
+		}
+		var rt eval.RuntimeError
+		if !errors.As(errs[0], &rt) {
+			t.Errorf("%s: got %T, want RuntimeError", tc.name, errs[0])
+		}
+	}
+}
+
+func TestTypeErrors(t *testing.T) {
+	cases := []struct {
+		name  string
+		input string
+	}{
+		{"float bitwise", `1.2 2.3 &`},
+		{"symbol + int", `%foo 2 +`},
+		{"bool + bool", `true true +`},
+		{"bool unary", `true ++`},
+	}
+
+	for _, tc := range cases {
+		_, errs := evalProgram(tc.input)
+		if len(errs) == 0 {
+			t.Errorf("%s: expected error, got none", tc.name)
+			continue
+		}
+		var te eval.TypeError
+		if !errors.As(errs[0], &te) {
+			t.Errorf("%s: got %T, want TypeError", tc.name, errs[0])
 		}
 	}
 }

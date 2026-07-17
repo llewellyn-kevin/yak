@@ -1,8 +1,6 @@
 package eval
 
 import (
-	"errors"
-	"fmt"
 	"llewellyn-kevin/yak/ast"
 )
 
@@ -55,7 +53,7 @@ func (e *EvalState) execCondExpr(expr ast.ExecuteConditionalExpression, block *a
 	}
 	val, err := stack.Pop()
 	if err != nil {
-		return []error{fmt.Errorf("Runtime Error: tried to run a conditional branch on an empty stack")}
+		return []error{RuntimeError{Message: "tried to run a conditional branch on an empty stack"}}
 	}
 	if val.IsTruthy() {
 		return e.executeBlock(cond.WhenTrue)
@@ -74,7 +72,7 @@ func (e *EvalState) evalExpression(expr ast.Expression) (err error) {
 	case ast.IsBitwiseOperator(expr):
 		err = e.evalBitwiseOperator(expr)
 	default:
-		err = fmt.Errorf("Runtime Error: unknown expression %s", expr.String())
+		err = RuntimeErrorf("unknown expression %s", expr.String())
 	}
 	return
 }
@@ -92,7 +90,7 @@ func (e *EvalState) evalLiteral(expr ast.Expression) (err error) {
 	case ast.BoolLiteral:
 		e.MainStack.Push(BooleanValue{Value: v.Value})
 	default:
-		err = fmt.Errorf("Runtime Error: unknown literal type %s", expr.String())
+		err = RuntimeErrorf("unknown literal type %s", expr.String())
 	}
 	return
 }
@@ -105,7 +103,7 @@ func (e *EvalState) evalUnaryOperator(expr ast.Expression) (err error) {
 
 	literal, err := activeStack.Pop()
 	if err != nil {
-		err = fmt.Errorf("Runtime Error: tried to use a unary operator on empty stack: '%s'", e.stackLabel())
+		err = RuntimeErrorf("tried to use a unary operator on empty stack: '%s'", e.stackLabel())
 		return
 	}
 
@@ -122,12 +120,12 @@ func (e *EvalState) evalBinaryOperator(expr ast.Expression) (err error) {
 
 	vals, err := activeStack.PopN(2)
 	if err != nil {
-		err = fmt.Errorf("Runtime Error: tried to use a binary operator on stack with fewer than 2 items: '%s'", e.stackLabel())
+		err = RuntimeErrorf("tried to use a binary operator on stack with fewer than 2 items: '%s'", e.stackLabel())
 		return
 	}
 
 	if len(vals) != 2 {
-		err = errors.New("Internal Error: stack popping logic failure")
+		err = InternalError{Message: "stack popping logic failure"}
 		return
 	}
 
@@ -156,12 +154,12 @@ func (e *EvalState) evalBitwiseOperator(expr ast.Expression) (err error) {
 
 	vals, err := activeStack.PopN(2)
 	if err != nil {
-		err = fmt.Errorf("Runtime Error: tried to use a binary operator on stack with fewer than 2 items: '%s'", e.stackLabel())
+		err = RuntimeErrorf("tried to use a binary operator on stack with fewer than 2 items: '%s'", e.stackLabel())
 		return
 	}
 
 	if len(vals) != 2 {
-		err = errors.New("Internal Error: stack popping logic failure")
+		err = InternalError{Message: "stack popping logic failure"}
 		return
 	}
 

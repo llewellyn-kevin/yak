@@ -1,7 +1,6 @@
 package eval
 
 import (
-	"errors"
 	"fmt"
 )
 
@@ -32,7 +31,7 @@ func (s *Stack) Push(v Value) {
 
 func (s *Stack) Pop() (Value, error) {
 	if s.length == 0 {
-		return nil, errors.New("cannot pop off an empty stack")
+		return nil, RuntimeError{Message: "cannot pop off an empty stack"}
 	}
 
 	v := s.head.Value
@@ -46,15 +45,14 @@ func (s *Stack) Pop() (Value, error) {
 
 func (s *Stack) PopN(n uint16) ([]Value, error) {
 	if s.length < n {
-		return nil, fmt.Errorf("cannot pop '%d' items off a stack with only length '%d'", n, s.length)
+		return nil, RuntimeErrorf("cannot pop '%d' items off a stack with only length '%d'", n, s.length)
 	}
 	vals := make([]Value, n)
-	var i uint16
-	for i = 0; i < n; i++ {
+	for i := range n {
 		var err error
 		vals[i], err = s.Pop()
 		if err != nil {
-			return nil, errors.New("internal error with stack")
+			return nil, InternalError{Message: "internal error with stack"}
 		}
 	}
 	return vals, nil
@@ -102,7 +100,7 @@ func (e EvalState) ActiveStack() (*Stack, error) {
 		return active, nil
 	}
 
-	return nil, fmt.Errorf("Internal Error: The current active stack is set as '%s', but there is no stack with that name.", e.activeStack)
+	return nil, InternalErrorf("the current active stack is set as '%s', but there is no stack with that name", e.activeStack)
 }
 
 func (e EvalState) stackLabel() string {
