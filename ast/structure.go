@@ -32,6 +32,17 @@ func (b Block) IsNamedScope() bool {
 	return b.Scope != ""
 }
 
+func (b Block) GetBlock(id int) (*Block, error) {
+	for _, statement := range b.Statements {
+		if block, ok := statement.(*Block); ok {
+			if block.Id == id {
+				return block, nil
+			}
+		}
+	}
+	return nil, fmt.Errorf("Could not find block with id `%d`", id)
+}
+
 func (b Block) String() string {
 	indent := strings.Repeat("\t", b.NestLevel*2)
 	bodyIndent := strings.Repeat("\t", b.NestLevel*2+1)

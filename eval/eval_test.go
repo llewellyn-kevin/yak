@@ -126,6 +126,32 @@ func TestBasicBinaryOperators(t *testing.T) {
 	}
 }
 
+func TestBlocks(t *testing.T) {
+	cases := map[string]basicProgramCase{
+		"executes a block on main": {
+			Input: "1 { 2 } 3",
+			Expected: makeProgram(
+				[]eval.Value{intVal(1), intVal(2), intVal(3)},
+				map[string][]eval.Value{},
+			),
+		},
+	}
+
+	for caseName, data := range cases {
+		output, err := evalProgram(data.Input)
+		if err != nil {
+			t.Errorf("Failed test case %s", caseName)
+			t.Errorf("Did not expect any errors. Got %s", err)
+			continue
+		}
+
+		if !programStatesAreEqual(*output, data.Expected) {
+			t.Errorf("Failed test case %s", caseName)
+			failOnDivergentPrograms(t, *output, data.Expected)
+		}
+	}
+}
+
 func evalProgram(input string) (*eval.EvalState, []error) {
 	program, err := parseProgram(input)
 	if err != nil {

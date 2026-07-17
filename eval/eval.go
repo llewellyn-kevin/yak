@@ -22,7 +22,16 @@ func PartialEval(p *ast.Program, state *EvalState) []error {
 
 func (e *EvalState) executeBlock(block *ast.Block) (errors []error) {
 	for _, expr := range block.Expressions {
-		err := e.evalExpression(expr)
+		var err error
+		if blockExp, ok := expr.(ast.ExecuteBlockExpression); ok {
+			block, err = block.GetBlock(blockExp.BlockId)
+			if err == nil {
+				errors = append(errors, e.executeBlock(block)...)
+			}
+		} else {
+			err = e.evalExpression(expr)
+		}
+
 		if err != nil {
 			errors = append(errors, err)
 		}
@@ -101,7 +110,6 @@ func (e *EvalState) evalBinaryOperator(expr ast.Expression) (err error) {
 	x, y := vals[0], vals[1]
 
 	if _, ok := expr.(ast.EqualToExpression); ok {
-        fmt.Println(fmt.Sprintf("foobar %s", expr))
 		activeStack.Push(&BooleanValue{Value: x == y})
 		return nil
 	}

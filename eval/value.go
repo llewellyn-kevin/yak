@@ -13,6 +13,7 @@ type Value interface {
 	DoUnaryOperation(ast.Expression) (Value, error)
 	DoBinaryOperation(Value, ast.Expression) (Value, error)
 	DoBitwiseOperation(Value, ast.Expression) (Value, error)
+	IsTruthy() bool
 	String() string
 }
 
@@ -44,6 +45,10 @@ func (v IntValue) DoBitwiseOperation(other Value, e ast.Expression) (Value, erro
 	default:
 		return v, fmt.Errorf("Tried to perform bitwise operation with non integer literal (%s)", other)
 	}
+}
+
+func (v IntValue) IsTruthy() bool {
+	return v.Value != 0
 }
 
 type number interface {
@@ -81,6 +86,10 @@ func (v FloatValue) DoBitwiseOperation(other Value, e ast.Expression) (Value, er
 	return v, fmt.Errorf("Tried to perform bitwise operation with non integer literal (%s)", v)
 }
 
+func (f FloatValue) IsTruthy() bool {
+	return f.Value != 0.0
+}
+
 func (f FloatValue) String() string {
 	return strconv.FormatFloat(f.Value, 'f', 6, 64)
 }
@@ -101,6 +110,10 @@ func (v StringValue) DoBinaryOperation(other Value, e ast.Expression) (Value, er
 
 func (v StringValue) DoBitwiseOperation(other Value, e ast.Expression) (Value, error) {
 	return v, fmt.Errorf("Tried to perform bitwise operation with non integer literal (%s)", v)
+}
+
+func (s StringValue) IsTruthy() bool {
+	return s.Value != ""
 }
 
 func (s StringValue) String() string {
@@ -125,6 +138,10 @@ func (v SymbolValue) DoBitwiseOperation(other Value, e ast.Expression) (Value, e
 	return v, fmt.Errorf("Tried to perform bitwise operation with non integer literal (%s)", v)
 }
 
+func (SymbolValue) IsTruthy() bool {
+	return true
+}
+
 func (s SymbolValue) String() string {
 	return "%" + s.Value
 }
@@ -145,6 +162,10 @@ func (v BooleanValue) DoBinaryOperation(Value, ast.Expression) (Value, error) {
 
 func (v BooleanValue) DoBitwiseOperation(Value, ast.Expression) (Value, error) {
 	return v, fmt.Errorf("Tried to perform bitwise operation with non integer literal (%s)", v)
+}
+
+func (v BooleanValue) IsTruthy() bool {
+	return v.Value
 }
 
 func (v BooleanValue) String() string {
