@@ -77,3 +77,27 @@ func (p *RdParser) parseAssignment() ast.Expression {
 		Identifier: p.currentToken.Literal,
 	}
 }
+
+func (p *RdParser) parseNAssignment(n int, intToken lexer.Token) ast.Expression {
+	if !p.expectCurrent(lexer.NASSIGN) {
+		// TODO: Add better error handling, but this should not happen
+		panic("Expected identifier after n-assignment operator")
+	}
+	assignmentToken := p.currentToken
+	p.nextToken()
+
+	if !p.expectCurrent(lexer.IDENT) {
+		// TODO: Add to more robust error handler
+		panic("Expected identifier after n-assignment operator")
+	}
+
+	return ast.NAssignmentExpression{
+		Tokens: []lexer.Token{
+			intToken,
+			assignmentToken,
+			p.currentToken,
+		},
+		Identifier: p.currentToken.Literal,
+		N:          n,
+	}
+}

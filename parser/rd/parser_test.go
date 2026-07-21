@@ -326,6 +326,21 @@ func TestParsingAssignment(t *testing.T) {
 	testParserOutput(t, program, expected)
 }
 
+func TestParsingNAssignment(t *testing.T) {
+	program := `42 24 2 =>foo`
+	expected := `block (
+    id: 0
+    statements: [
+    ]
+    expressions: [
+        42
+        24
+        assign-2 foo
+    ]
+)`
+	testParserOutput(t, program, expected)
+}
+
 func TestStio(t *testing.T) {
 	program := `yakout`
 	expected := `block (
@@ -336,7 +351,7 @@ func TestStio(t *testing.T) {
         yakout
     ]
 )`
-    testParserOutput(t, program, expected)
+	testParserOutput(t, program, expected)
 }
 
 func getParser(reader *strings.Reader) *rd.RdParser {

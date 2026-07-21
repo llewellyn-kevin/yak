@@ -174,6 +174,65 @@ func TestBlocks(t *testing.T) {
 	}
 }
 
+func TestAssigment(t *testing.T) {
+	cases := map[string]basicProgramCase{
+		"basic assignment": {
+			Input: "1 ->foo",
+			Expected: makeProgram(
+				[]eval.Value{},
+				map[string][]eval.Value{
+					"foo": {intVal(1)},
+				},
+			),
+		},
+		"basic n assignment": {
+			Input: "1 2 3 3=>foo",
+			Expected: makeProgram(
+				[]eval.Value{},
+				map[string][]eval.Value{
+					"foo": {intVal(1), intVal(2), intVal(3)},
+				},
+			),
+		},
+		"consecutive assignment": {
+			Input: "42 1 4 2 3 2=>foo ->fizz->buzz->fizz",
+			Expected: makeProgram(
+				[]eval.Value{},
+				map[string][]eval.Value{
+					"foo":  {intVal(2), intVal(3)},
+					"fizz": {intVal(4), intVal(42)},
+					"buzz": {intVal(1)},
+				},
+			),
+		},
+		"it pulls values off named stacks": {
+			Input: "42 1 4 2 3 2=>foo ->fizz->buzz->fizz foo fizz",
+			Expected: makeProgram(
+				[]eval.Value{intVal(3), intVal(42)},
+				map[string][]eval.Value{
+					"foo":  {intVal(2)},
+					"fizz": {intVal(4)},
+					"buzz": {intVal(1)},
+				},
+			),
+		},
+	}
+
+	for caseName, data := range cases {
+		output, err := evalProgram(data.Input)
+		if err != nil {
+			t.Errorf("Failed test case %s", caseName)
+			t.Errorf("Did not expect any errors. Got %s", err)
+			continue
+		}
+
+		if !programStatesAreEqual(*output, data.Expected) {
+			t.Errorf("Failed test case %s", caseName)
+			failOnDivergentPrograms(t, *output, data.Expected)
+		}
+	}
+}
+
 func TestRuntimeErrors(t *testing.T) {
 	cases := []struct {
 		name  string

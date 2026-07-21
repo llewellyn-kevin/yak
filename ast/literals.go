@@ -1,6 +1,7 @@
 package ast
 
 import (
+	"fmt"
 	"llewellyn-kevin/yak/lexer"
 	"strconv"
 )
@@ -12,6 +13,20 @@ func IsLiteral(expr Expression) bool {
 	default:
 		return false
 	}
+}
+
+func IsAssignment(expr Expression) bool {
+	switch expr.(type) {
+	case AssignmentExpression, NAssignmentExpression:
+		return true
+	default:
+		return false
+	}
+}
+
+func IsIdentifier(expr Expression) bool {
+	_, ok := expr.(IdentifierExpression)
+	return ok
 }
 
 type IntLiteral struct {
@@ -89,4 +104,16 @@ func (AssignmentExpression) isExpression() {}
 
 func (a AssignmentExpression) String() string {
 	return "assign " + a.Identifier
+}
+
+type NAssignmentExpression struct {
+	Tokens     []lexer.Token
+	Identifier string
+	N          int
+}
+
+func (NAssignmentExpression) isExpression() {}
+
+func (a NAssignmentExpression) String() string {
+	return fmt.Sprintf("assign-%d %s", a.N, a.Identifier)
 }

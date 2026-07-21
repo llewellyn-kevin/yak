@@ -71,6 +71,10 @@ func (e *EvalState) evalExpression(expr ast.Expression) (err error) {
 		err = e.evalBinaryOperator(expr)
 	case ast.IsBitwiseOperator(expr):
 		err = e.evalBitwiseOperator(expr)
+	case ast.IsAssignment(expr):
+		err = e.evalAssignment(expr)
+	case ast.IsIdentifier(expr):
+		err = e.evalIdentifier(expr.(ast.IdentifierExpression))
 	default:
 		err = RuntimeErrorf("unknown expression %s", expr.String())
 	}
@@ -171,5 +175,71 @@ func (e *EvalState) evalBitwiseOperator(expr ast.Expression) (err error) {
 		return err
 	}
 	activeStack.Push(res)
+	return
+}
+
+func (e *EvalState) evalAssignment(expr ast.Expression) (err error) {
+	switch typedExpr := expr.(type) {
+	case ast.AssignmentExpression:
+		return e.evalBasicAssignment(typedExpr)
+	case ast.NAssignmentExpression:
+		return e.evalNAssignment(typedExpr)
+	default:
+		return InternalError{Message: "invalid eval assignment"}
+	}
+}
+
+func (e *EvalState) evalBasicAssignment(expr ast.AssignmentExpression) (err error) {
+	stack, err := e.ActiveStack()
+	if err != nil {
+		return err
+	}
+	val, err := stack.Pop()
+	if err != nil {
+		return RuntimeErrorf("could not assign a value to stack '%s', not enough values on stack '%s'", expr.Identifier, e.stackLabel())
+	}
+
+	e.pushOrCreate(expr.Identifier, val)
+	return nil
+}
+
+func (e *EvalState) evalNAssignment(expr ast.NAssignmentExpression) (err error) {
+	stack, err := e.ActiveStack()
+	if err != nil {
+		return err
+	}
+	vals, err := stack.PopN(uint16(expr.N))
+	if err != nil {
+		return RuntimeErrorf("could not assign %d values to stack '%s', not enough values on stack '%s'", expr.N, expr.Identifier, e.stackLabel())
+	}
+
+	for i := len(vals) - 1; i >= 0; i-- {
+		e.pushOrCreate(expr.Identifier, vals[i])
+	}
+	return nil
+}
+
+func (e *EvalState) pushOrCreate(stack string, val Value) {
+	if targetStack, ok := e.NamedStacks[stack]; ok {
+		targetStack.Push(val)
+	} else {
+		newStack := &Stack{}
+		newStack.Push(val)
+		e.NamedStacks[stack] = newStack
+	}
+}
+
+func (e *EvalState) evalIdentifier(expr ast.IdentifierExpression) (err error) {
+	identStack, ok := e.NamedStacks[expr.Value]
+	if !ok {
+		return RuntimeErrorf("could not recognize identifier '%s'", expr.Value)
+	}
+
+	val, err := identStack.Pop()
+	if err != nil {
+		return RuntimeErrorf("identifier '%s' is an empty stack", expr.Value)
+	}
+
+	e.MainStack.Push(val)
 	return
 }

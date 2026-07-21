@@ -50,66 +50,79 @@ func (p *RdParser) nextToken() {
 }
 
 func (p *RdParser) parseExpression() ast.Expression {
+	var expr ast.Expression
+
 	switch true {
 	case p.expectCurrent(lexer.INT):
-		return p.parseInt()
+		expr = p.parseInt()
 	case p.expectCurrent(lexer.FLOAT):
-		return p.parseFloat()
+		expr = p.parseFloat()
 	case p.expectCurrent(lexer.STRING): // TODO: Not implemented in lexer
-		return p.parseString()
+		expr = p.parseString()
 	case p.expectCurrent(lexer.SYMBOL):
-		return p.parseSymbol()
+		expr = p.parseSymbol()
 	case p.expectCurrent(lexer.TRUE):
-		return p.parseBool(true)
+		expr = p.parseBool(true)
 	case p.expectCurrent(lexer.FALSE):
-		return p.parseBool(false)
+		expr = p.parseBool(false)
 	case p.expectCurrent(lexer.ADD):
-		return p.parseAdd()
+		expr = p.parseAdd()
 	case p.expectCurrent(lexer.SUB):
-		return p.parseSubtract()
+		expr = p.parseSubtract()
 	case p.expectCurrent(lexer.MULT):
-		return p.parseMultiply()
+		expr = p.parseMultiply()
 	case p.expectCurrent(lexer.DIV):
-		return p.parseDivide()
+		expr = p.parseDivide()
 	case p.expectCurrent(lexer.MOD):
-		return p.parseModulo()
+		expr = p.parseModulo()
 	case p.expectCurrent(lexer.EXP):
-		return p.parsePower()
+		expr = p.parsePower()
 	case p.expectCurrent(lexer.LT):
-		return p.parseLessThan()
+		expr = p.parseLessThan()
 	case p.expectCurrent(lexer.GT):
-		return p.parseGreaterThan()
+		expr = p.parseGreaterThan()
 	case p.expectCurrent(lexer.LTEQ):
-		return p.parseLessThanEqualTo()
+		expr = p.parseLessThanEqualTo()
 	case p.expectCurrent(lexer.GTEQ):
-		return p.parseGreaterThanEqualTo()
+		expr = p.parseGreaterThanEqualTo()
 	case p.expectCurrent(lexer.EQ):
-		return p.parseEqualTo()
+		expr = p.parseEqualTo()
 	case p.expectCurrent(lexer.SWAP):
-		return p.parseSwap()
+		expr = p.parseSwap()
 	case p.expectCurrent(lexer.BOR):
-		return p.parseBor()
+		expr = p.parseBor()
 	case p.expectCurrent(lexer.BAND):
-		return p.parseBand()
+		expr = p.parseBand()
 	case p.expectCurrent(lexer.BXOR):
-		return p.parseXor()
+		expr = p.parseXor()
 	case p.expectCurrent(lexer.DUP):
-		return p.parseDup()
+		expr = p.parseDup()
 	case p.expectCurrent(lexer.INC):
-		return p.parseIncrement()
+		expr = p.parseIncrement()
 	case p.expectCurrent(lexer.DEC):
-		return p.parseDecrement()
+		expr = p.parseDecrement()
 	case p.expectCurrent(lexer.LSHIFT):
-		return p.parseLeftShift()
+		expr = p.parseLeftShift()
 	case p.expectCurrent(lexer.RSHIFT):
-		return p.parseRightShift()
+		expr = p.parseRightShift()
 	case p.expectCurrent(lexer.ASSIGN):
-		return p.parseAssignment()
+		expr = p.parseAssignment()
 	case p.expectCurrent(lexer.IDENT):
-		return p.parseIdent()
+		expr = p.parseIdent()
 	case p.expectCurrent(lexer.YAKOUT):
-		return p.parseYakout()
+		expr = p.parseYakout()
 	default:
 		return nil
 	}
+
+	if p.expectPeek(lexer.NASSIGN) {
+		intLit, ok := expr.(ast.IntLiteral)
+		if !ok {
+			panic("n-assignment requires an integer literal count")
+		}
+		p.nextToken()
+		return p.parseNAssignment(intLit.Value, intLit.Token)
+	}
+
+	return expr
 }

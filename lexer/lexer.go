@@ -48,7 +48,6 @@ var Keywords = map[string]TokenType{
 // Maps byte arrays representing tokens to their token outputers.
 var tokenMap = tMap{
 	"/":  terminalToken(DIV),
-	"=":  terminalToken(EQ),
 	"^":  terminalToken(BXOR),
 	"&":  terminalToken(BAND),
 	"|":  terminalToken(BOR),
@@ -60,6 +59,9 @@ var tokenMap = tMap{
 	")":  terminalToken(RPARENT),
 	"'":  terminalToken(SQUOTE),
 	"\"": terminalToken(DQUOTE),
+	"=": recursiveToken(terminalToken(EQ), tMap{
+		">": terminalToken(NASSIGN),
+	}),
 	"*": recursiveToken(terminalToken(MULT), tMap{
 		"*": terminalToken(EXP),
 	}),

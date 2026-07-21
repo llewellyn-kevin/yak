@@ -67,7 +67,7 @@ const (
 
 	// Assignments
 	ASSIGN  = "ASSIGN"
-	NASSIGN = "NASSIGN" // Not Implemented Yet
+	NASSIGN = "NASSIGN"
 
 	// Keywords
 	TRUE    = "TRUE"
