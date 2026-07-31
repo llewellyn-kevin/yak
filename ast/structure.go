@@ -2,18 +2,45 @@ package ast
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 )
 
 type Program struct {
-	MainBlock *Block
+	FunctionTable map[string]*FunctionStatement
+	MainBlock     *Block
 }
 
-func (p Program) String() string {
-	return p.MainBlock.String()
+func (p Program) String() (s string) {
+	names := make([]string, 0, len(p.FunctionTable))
+	for name := range p.FunctionTable {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	for _, name := range names {
+		s += p.FunctionTable[name].String() + "\n"
+	}
+	s += p.MainBlock.String()
+	return
+}
+
+func (p Program) GetFunction(name string) (*FunctionStatement, error) {
+	fn, ok := p.FunctionTable[name]
+	if !ok {
+		return nil, fmt.Errorf("could not find function with name `%s`", name)
+	}
+	return fn, nil
+}
+
+func (p *Program) AddFunction(fn *FunctionStatement) {
+	if p.FunctionTable == nil {
+		p.FunctionTable = make(map[string]*FunctionStatement)
+	}
+	p.FunctionTable[fn.Name] = fn
 }
 
 type Block struct {
+	Program     *Program
 	Id          int
 	NestLevel   int
 	Scope       string
@@ -130,6 +157,28 @@ func (c ConditionalStatement) String() string {
 		whenTrueStr + "\n" +
 		bodyIndent + "when-false:\n" +
 		whenFalseStr + "\n" +
+		indent + ")"
+}
+
+type FunctionStatement struct {
+	Name    string
+	Args    int
+	Returns int
+	Body    *Block
+}
+
+func (FunctionStatement) isStatement() {}
+
+func (f FunctionStatement) String() string {
+	indent := strings.Repeat("\t", 0)
+	bodyIndent := strings.Repeat("\t", 1)
+
+	return indent + "function (\n" +
+		bodyIndent + "name: " + f.Name + "\n" +
+		bodyIndent + "args: " + fmt.Sprint(f.Args) + "\n" +
+		bodyIndent + "returns: " + fmt.Sprint(f.Returns) + "\n" +
+		bodyIndent + "body:\n" +
+		f.Body.String() + "\n" +
 		indent + ")"
 }
 

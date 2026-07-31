@@ -2,6 +2,15 @@ package ast
 
 import "llewellyn-kevin/yak/lexer"
 
+func IsStackOperationExpression(expr Expression) bool {
+	switch expr.(type) {
+	case SwapExpression, DupExpression:
+		return true
+	default:
+		return false
+	}
+}
+
 type SwapExpression struct {
 	Token lexer.Token
 }

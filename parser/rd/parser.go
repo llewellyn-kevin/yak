@@ -29,9 +29,8 @@ func NewRdParser(l *lexer.Lexer) *RdParser {
 }
 
 func (p *RdParser) Parse() *ast.Program {
-	program := &ast.Program{
-		MainBlock: p.parseBlock(0),
-	}
+	program := &ast.Program{}
+	program.MainBlock = p.parseBlock(program, 0)
 
 	return program
 }

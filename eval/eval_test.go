@@ -233,6 +233,90 @@ func TestAssigment(t *testing.T) {
 	}
 }
 
+func TestStackOperations(t *testing.T) {
+	cases := map[string]basicProgramCase{
+		"duplicate single value": {
+			Input: "5 .",
+			Expected: makeProgram(
+				[]eval.Value{intVal(5), intVal(5)},
+				map[string][]eval.Value{},
+			),
+		},
+		"duplicate top of stack": {
+			Input: "1 2 3 .",
+			Expected: makeProgram(
+				[]eval.Value{intVal(1), intVal(2), intVal(3), intVal(3)},
+				map[string][]eval.Value{},
+			),
+		},
+		"swap two values": {
+			Input: "1 2 <>",
+			Expected: makeProgram(
+				[]eval.Value{intVal(2), intVal(1)},
+				map[string][]eval.Value{},
+			),
+		},
+		"swap top of stack": {
+			Input: "1 2 3 <>",
+			Expected: makeProgram(
+				[]eval.Value{intVal(1), intVal(3), intVal(2)},
+				map[string][]eval.Value{},
+			),
+		},
+		"swap mixed types": {
+			Input: "%foo 2.3 <>",
+			Expected: makeProgram(
+				[]eval.Value{floatVal(2.3), symVal("foo")},
+				map[string][]eval.Value{},
+			),
+		},
+		"combine swaps": {
+			Input: "1 2 <> 3 4 <>",
+			Expected: makeProgram(
+				[]eval.Value{intVal(2), intVal(1), intVal(4), intVal(3)},
+				map[string][]eval.Value{},
+			),
+		},
+	}
+
+	for caseName, data := range cases {
+		output, err := evalProgram(data.Input)
+		if err != nil {
+			t.Errorf("Failed test case %s", caseName)
+			t.Errorf("Did not expect any errors. Got %s", err)
+			continue
+		}
+
+		if !programStatesAreEqual(*output, data.Expected) {
+			t.Errorf("Failed test case %s", caseName)
+			failOnDivergentPrograms(t, *output, data.Expected)
+		}
+	}
+}
+
+func TestStackOperationErrors(t *testing.T) {
+	cases := []struct {
+		name  string
+		input string
+	}{
+		{"empty stack for duplicate", `.`},
+		{"empty stack for swap", `<>`},
+		{"too few items for swap", `5 <>`},
+	}
+
+	for _, tc := range cases {
+		_, errs := evalProgram(tc.input)
+		if len(errs) == 0 {
+			t.Errorf("%s: expected error, got none", tc.name)
+			continue
+		}
+		var rt eval.RuntimeError
+		if !errors.As(errs[0], &rt) {
+			t.Errorf("%s: got %T, want RuntimeError", tc.name, errs[0])
+		}
+	}
+}
+
 func TestRuntimeErrors(t *testing.T) {
 	cases := []struct {
 		name  string
@@ -277,6 +361,81 @@ func TestTypeErrors(t *testing.T) {
 		var te eval.TypeError
 		if !errors.As(errs[0], &te) {
 			t.Errorf("%s: got %T, want TypeError", tc.name, errs[0])
+		}
+	}
+}
+
+func TestFunctions(t *testing.T) {
+	cases := []basicProgramCase{
+		{
+			Input: "2#adder#1 { + } 2 3 6 adder adder",
+			Expected: makeProgram(
+				[]eval.Value{intVal(11)},
+				map[string][]eval.Value{},
+			),
+		},
+		{
+			Input: "1#addFive#1 { 5 + } 3 addFive",
+			Expected: makeProgram(
+				[]eval.Value{intVal(8)},
+				map[string][]eval.Value{},
+			),
+		},
+		{
+			Input: "1#conditionalTest#1 {2 % if {1} else {2}} 4 conditionalTest 9 conditionalTest",
+			Expected: makeProgram(
+				[]eval.Value{intVal(2), intVal(1)},
+				map[string][]eval.Value{},
+			),
+		},
+		{
+			Input: "1#double#1 {2 *} 1#halve#1 {2.0 /} 4 double 8 halve",
+			Expected: makeProgram(
+				[]eval.Value{intVal(8), floatVal(4)},
+				map[string][]eval.Value{},
+			),
+		},
+		{
+			Input: "1#recursion#1 { 1 - . 0 <= if { } else { recursion } } 5 recursion",
+			Expected: makeProgram(
+				[]eval.Value{intVal(0)},
+				map[string][]eval.Value{},
+			),
+		},
+	}
+
+	for _, tc := range cases {
+		output, errs := evalProgram(tc.Input)
+		if len(errs) > 0 {
+			t.Errorf("Unexpected errors: %v", errs)
+			continue
+		}
+
+		if !programStatesAreEqual(*output, tc.Expected) {
+			failOnDivergentPrograms(t, *output, tc.Expected)
+		}
+	}
+}
+
+func TestFunctionErrors(t *testing.T) {
+	cases := []struct {
+		name  string
+		input string
+	}{
+		{"function not found", `1#foo#1 { + } bar`},
+		{"not enough args", `2#foo#2 { + } 1 foo`},
+		{"not enough returns", `1#foo#3 { 1 } 0 foo`},
+	}
+
+	for _, tc := range cases {
+		_, errs := evalProgram(tc.input)
+		if len(errs) == 0 {
+			t.Errorf("%s: expected error, got none", tc.name)
+			continue
+		}
+		var rt eval.RuntimeError
+		if !errors.As(errs[0], &rt) {
+			t.Errorf("%s: got %T, want RuntimeError", tc.name, errs[0])
 		}
 	}
 }

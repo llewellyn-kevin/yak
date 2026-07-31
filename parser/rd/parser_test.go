@@ -341,6 +341,70 @@ func TestParsingNAssignment(t *testing.T) {
 	testParserOutput(t, program, expected)
 }
 
+func TestParsingFunctionDefinition(t *testing.T) {
+	program := `2#myFunc#1 { % 0 = if { 5 } else { 10 } } 2#add#1 { + }`
+	expected := `function (
+    name: add
+    args: 2
+    returns: 1
+    body:
+        block (
+            id: 4
+            statements: [
+            ]
+            expressions: [
+                +
+            ]
+        )
+)
+function (
+    name: myFunc
+    args: 2
+    returns: 1
+    body:
+        block (
+            id: 1
+            statements: [
+                conditional (
+                    id: 0
+                    when-true:
+                        block (
+                            id: 2
+                            statements: [
+                            ]
+                            expressions: [
+                                5
+                            ]
+                        )
+                    when-false:
+                        block (
+                            id: 3
+                            statements: [
+                            ]
+                            expressions: [
+                                10
+                            ]
+                        )
+                )
+            ]
+            expressions: [
+                %
+                0
+                =
+                execute-conditional 0
+            ]
+        )
+)
+block (
+    id: 0
+    statements: [
+    ]
+    expressions: [
+    ]
+)`
+	testParserOutput(t, program, expected)
+}
+
 func TestStio(t *testing.T) {
 	program := `yakout`
 	expected := `block (

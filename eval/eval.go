@@ -6,6 +6,7 @@ import (
 
 func Eval(p *ast.Program) (*EvalState, []error) {
 	state := NewEvalState()
+	state.AddFunctionsFromMap(p.FunctionTable)
 	errors := state.executeBlock(p.MainBlock)
 	return state, errors
 }
@@ -14,6 +15,7 @@ func PartialEval(p *ast.Program, state *EvalState) []error {
 	if state == nil {
 		state = NewEvalState()
 	}
+	state.AddFunctionsFromMap(p.FunctionTable)
 	errors := state.executeBlock(p.MainBlock)
 	return errors
 }
@@ -27,7 +29,7 @@ func (e *EvalState) executeBlock(block *ast.Block) (errorList []error) {
 			errorList = append(errorList, e.execCondExpr(typed, block)...)
 		default:
 			if err := e.evalExpression(expr); err != nil {
-				errorList = append(errorList, err)
+				errorList = append(errorList, err...)
 			}
 		}
 	}
@@ -61,7 +63,8 @@ func (e *EvalState) execCondExpr(expr ast.ExecuteConditionalExpression, block *a
 	return e.executeBlock(cond.WhenFalse)
 }
 
-func (e *EvalState) evalExpression(expr ast.Expression) (err error) {
+func (e *EvalState) evalExpression(expr ast.Expression) (errors []error) {
+	var err error
 	switch {
 	case ast.IsLiteral(expr):
 		err = e.evalLiteral(expr)
@@ -73,29 +76,40 @@ func (e *EvalState) evalExpression(expr ast.Expression) (err error) {
 		err = e.evalBitwiseOperator(expr)
 	case ast.IsAssignment(expr):
 		err = e.evalAssignment(expr)
+	case ast.IsStackOperationExpression(expr):
+		err = e.evalStackOperation(expr)
 	case ast.IsIdentifier(expr):
-		err = e.evalIdentifier(expr.(ast.IdentifierExpression))
+		errors = e.evalIdentifier(expr.(ast.IdentifierExpression))
 	default:
 		err = RuntimeErrorf("unknown expression %s", expr.String())
+	}
+	if err != nil {
+		errors = append(errors, err)
 	}
 	return
 }
 
 func (e *EvalState) evalLiteral(expr ast.Expression) (err error) {
+	stack, err := e.ActiveStack()
+	if err != nil {
+		return err
+	}
+
 	switch v := expr.(type) {
 	case ast.IntLiteral:
-		e.MainStack.Push(IntValue{Value: v.Value})
+		stack.Push(IntValue{Value: v.Value})
 	case ast.FloatLiteral:
-		e.MainStack.Push(FloatValue{Value: v.Value})
+		stack.Push(FloatValue{Value: v.Value})
 	case ast.StringLiteral:
-		e.MainStack.Push(StringValue{Value: v.Value})
+		stack.Push(StringValue{Value: v.Value})
 	case ast.SymbolLiteral:
-		e.MainStack.Push(SymbolValue{Value: v.Value})
+		stack.Push(SymbolValue{Value: v.Value})
 	case ast.BoolLiteral:
-		e.MainStack.Push(BooleanValue{Value: v.Value})
+		stack.Push(BooleanValue{Value: v.Value})
 	default:
 		err = RuntimeErrorf("unknown literal type %s", expr.String())
 	}
+
 	return
 }
 
@@ -114,6 +128,40 @@ func (e *EvalState) evalUnaryOperator(expr ast.Expression) (err error) {
 	result, err := literal.DoUnaryOperation(expr)
 	activeStack.Push(result)
 	return
+}
+
+func (e *EvalState) evalStackOperation(expr ast.Expression) (err error) {
+	stack, err := e.ActiveStack()
+	if err != nil {
+		return err
+	}
+
+	switch expr.(type) {
+	case ast.DupExpression:
+		val := stack.Peek()
+		if val == nil {
+			return RuntimeErrorf("tried to duplicate top of empty stack: '%s'", e.stackLabel())
+		}
+		stack.Push(val)
+	case ast.SwapExpression:
+		if stack.Size() < 2 {
+			return RuntimeErrorf("tried to swap top of stack with fewer than 2 items: '%s'", e.stackLabel())
+		}
+		first, err := stack.Pop()
+		if err != nil {
+			return err
+		}
+		second, err := stack.Pop()
+		if err != nil {
+			return err
+		}
+		stack.Push(first)
+		stack.Push(second)
+	default:
+		return InternalErrorf("unrecognized stack operation %s", expr.String())
+	}
+
+	return nil
 }
 
 func (e *EvalState) evalBinaryOperator(expr ast.Expression) (err error) {
@@ -199,8 +247,8 @@ func (e *EvalState) evalBasicAssignment(expr ast.AssignmentExpression) (err erro
 		return RuntimeErrorf("could not assign a value to stack '%s', not enough values on stack '%s'", expr.Identifier, e.stackLabel())
 	}
 
-	e.pushOrCreate(expr.Identifier, val)
-	return nil
+	err = e.pushOrCreate(expr.Identifier, val)
+	return
 }
 
 func (e *EvalState) evalNAssignment(expr ast.NAssignmentExpression) (err error) {
@@ -214,30 +262,44 @@ func (e *EvalState) evalNAssignment(expr ast.NAssignmentExpression) (err error) 
 	}
 
 	for i := len(vals) - 1; i >= 0; i-- {
-		e.pushOrCreate(expr.Identifier, vals[i])
+		if err = e.pushOrCreate(expr.Identifier, vals[i]); err != nil {
+			return
+		}
 	}
-	return nil
+	return
 }
 
-func (e *EvalState) pushOrCreate(stack string, val Value) {
+func (e *EvalState) pushOrCreate(stack string, val Value) error {
 	if targetStack, ok := e.NamedStacks[stack]; ok {
 		targetStack.Push(val)
 	} else {
+		if e.HasFunction(stack) {
+			return RuntimeErrorf("cannot assign to stack '%s', it is a function name", stack)
+		}
 		newStack := &Stack{}
 		newStack.Push(val)
 		e.NamedStacks[stack] = newStack
 	}
+	return nil
 }
 
-func (e *EvalState) evalIdentifier(expr ast.IdentifierExpression) (err error) {
+func (e *EvalState) evalIdentifier(expr ast.IdentifierExpression) (errors []error) {
+	if e.HasFunction(expr.Value) {
+		errors = e.executeFunction(expr.Value)
+		if len(errors) > 0 {
+			return
+		}
+		return []error{}
+	}
+
 	identStack, ok := e.NamedStacks[expr.Value]
 	if !ok {
-		return RuntimeErrorf("could not recognize identifier '%s'", expr.Value)
+		return []error{RuntimeErrorf("could not recognize identifier '%s'", expr.Value)}
 	}
 
 	val, err := identStack.Pop()
 	if err != nil {
-		return RuntimeErrorf("identifier '%s' is an empty stack", expr.Value)
+		return []error{RuntimeErrorf("identifier '%s' is an empty stack", expr.Value)}
 	}
 
 	e.MainStack.Push(val)

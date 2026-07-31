@@ -2,6 +2,7 @@ package eval
 
 import (
 	"fmt"
+	"llewellyn-kevin/yak/ast"
 )
 
 type node struct {
@@ -17,6 +18,14 @@ func newNode(v Value) *node {
 type Stack struct {
 	head   *node
 	length uint16
+}
+
+func NewStackFromValues(vals []Value) *Stack {
+	s := &Stack{}
+	for _, v := range vals {
+		s.Push(v)
+	}
+	return s
 }
 
 func (s *Stack) Push(v Value) {
@@ -79,9 +88,10 @@ func (s Stack) String() (str string) {
 }
 
 type EvalState struct {
-	MainStack   *Stack
-	NamedStacks map[string]*Stack
-	activeStack string
+	FunctionTable map[string]*ast.FunctionStatement
+	MainStack     *Stack
+	NamedStacks   map[string]*Stack
+	activeStack   string
 }
 
 func NewEvalState() *EvalState {
@@ -89,6 +99,67 @@ func NewEvalState() *EvalState {
 		MainStack:   &Stack{},
 		NamedStacks: make(map[string]*Stack),
 	}
+}
+
+func (e *EvalState) AddFunction(fn *ast.FunctionStatement) {
+	if e.FunctionTable == nil {
+		e.FunctionTable = make(map[string]*ast.FunctionStatement)
+	}
+	e.FunctionTable[fn.Name] = fn
+}
+
+func (e *EvalState) AddFunctionsFromMap(funcs map[string]*ast.FunctionStatement) {
+	for _, fn := range funcs {
+		e.AddFunction(fn)
+	}
+}
+
+func (e EvalState) HasFunction(name string) bool {
+	_, ok := e.FunctionTable[name]
+	return ok
+}
+
+func (e EvalState) executeFunction(name string) []error {
+	fn, ok := e.FunctionTable[name]
+	if !ok {
+		return []error{RuntimeErrorf("could not find function with name '%s'", name)}
+	}
+
+	stack, err := e.ActiveStack()
+	prevStackName := e.activeStack
+	if err != nil {
+		return []error{err}
+	}
+
+	vals, err := stack.PopN(uint16(fn.Args))
+	if err != nil {
+		return []error{RuntimeErrorf("function '%s' expects %d argument(s), but there were not enough values on stack '%s'", name, fn.Args, e.stackLabel())}
+	}
+	fnStack := NewStackFromValues(vals)
+	fnStackName := fmt.Sprintf("fn#%s", name)
+	e.NamedStacks[fnStackName] = fnStack
+	e.activeStack = fnStackName
+
+	defer func() {
+		e.activeStack = prevStackName
+		e.RemoveStack(fnStackName)
+	}()
+
+	errors := e.executeBlock(fn.Body)
+	if len(errors) > 0 {
+		return errors
+	}
+
+	returnVals, err := fnStack.PopN(uint16(fn.Returns))
+	if err != nil {
+		return []error{RuntimeErrorf("function '%s' did not return enough values, expected %d but got %d", name, fn.Returns, len(returnVals))}
+	}
+
+	for _, val := range returnVals {
+		stack.Push(val)
+	}
+
+	return []error{}
 }
 
 func (e EvalState) ActiveStack() (*Stack, error) {
@@ -101,6 +172,14 @@ func (e EvalState) ActiveStack() (*Stack, error) {
 	}
 
 	return nil, InternalErrorf("the current active stack is set as '%s', but there is no stack with that name", e.activeStack)
+}
+
+func (e *EvalState) RemoveStack(name string) error {
+	if _, ok := e.NamedStacks[name]; !ok {
+		return RuntimeErrorf("could not remove stack '%s', it does not exist", name)
+	}
+	delete(e.NamedStacks, name)
+	return nil
 }
 
 func (e EvalState) stackLabel() string {
